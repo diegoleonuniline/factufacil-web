@@ -27,6 +27,7 @@ let perfilCsfBase64 = '';
 let rfcTimeout = null;
 let razonSeleccionadaId = null;
 let imagenActual = '';
+let currentWizardStep = 1;
 
 // ============================================
 // INICIALIZACIÓN
@@ -490,6 +491,7 @@ function mostrarPanelInvitado() {
     }
   }, 300);
   
+  resetWizard();
   navegarA('solicitar');
 }
 
@@ -533,6 +535,7 @@ function mostrarPanelCliente() {
         select.value = empresaPre;
         sessionStorage.removeItem('empresaPreseleccionada');
       }
+      resetWizard();
       navegarA('solicitar');
       return;
     }
@@ -587,6 +590,7 @@ function navegarA(view) {
   
   if (view === 'dashboard') cargarDashboard();
   if (view === 'historial') cargarHistorial();
+  if (view === 'solicitar') resetWizard();
 }
 
 function handleBottomNav(btn) {
@@ -613,6 +617,169 @@ function cerrarMenuMobile() {
   sidebar.classList.remove('mobile-open');
   overlay.classList.remove('show');
   overlay.classList.add('hidden');
+}
+
+// ============================================
+// WIZARD DE SOLICITUD - NUEVA FUNCIONALIDAD
+// ============================================
+function resetWizard() {
+  currentWizardStep = 1;
+  updateWizardUI();
+  limpiarFormularioSolicitud();
+}
+
+function updateWizardUI() {
+  // Actualizar steps visuales
+  document.querySelectorAll('.wizard-step').forEach((step, idx) => {
+    const stepNum = idx + 1;
+    step.classList.remove('active', 'completed');
+    
+    if (stepNum < currentWizardStep) {
+      step.classList.add('completed');
+    } else if (stepNum === currentWizardStep) {
+      step.classList.add('active');
+    }
+  });
+  
+  // Mostrar/ocultar paneles
+  document.querySelectorAll('.wizard-panel').forEach((panel, idx) => {
+    panel.classList.toggle('active', idx + 1 === currentWizardStep);
+  });
+  
+  // Actualizar botones
+  const btnPrev = document.getElementById('btnWizardPrev');
+  const btnNext = document.getElementById('btnWizardNext');
+  const btnSubmit = document.getElementById('btnWizardSubmit');
+  
+  btnPrev.style.display = currentWizardStep > 1 ? 'inline-flex' : 'none';
+  btnNext.style.display = currentWizardStep < 4 ? 'inline-flex' : 'none';
+  btnSubmit.style.display = currentWizardStep === 4 ? 'inline-flex' : 'none';
+  
+  // Si estamos en el paso 4, actualizar resumen
+  if (currentWizardStep === 4) {
+    actualizarResumenWizard();
+  }
+}
+
+function wizardNextStep() {
+  if (!validarPasoActual()) {
+    return;
+  }
+  
+  if (currentWizardStep < 4) {
+    currentWizardStep++;
+    updateWizardUI();
+  }
+}
+
+function wizardPrevStep() {
+  if (currentWizardStep > 1) {
+    currentWizardStep--;
+    updateWizardUI();
+  }
+}
+
+function validarPasoActual() {
+  switch(currentWizardStep) {
+    case 1:
+      const empresa = document.getElementById('empresaId').value;
+      if (!empresa) {
+        toast('Selecciona una tienda', 'error');
+        return false;
+      }
+      return true;
+      
+    case 2:
+      const rfc = document.getElementById('solRfc').value.trim();
+      const razon = document.getElementById('solRazon').value.trim();
+      const regimen = document.getElementById('solRegimen').value;
+      const cp = document.getElementById('solCp').value.trim();
+      const usoCfdi = document.getElementById('solUsoCfdi').value;
+      const email = document.getElementById('solEmail').value.trim();
+      
+      if (!rfc || !razon || !regimen || !cp || !usoCfdi || !email) {
+        toast('Completa todos los campos fiscales obligatorios', 'error');
+        return false;
+      }
+      
+      if (rfc.length < 12) {
+        toast('RFC debe tener al menos 12 caracteres', 'error');
+        return false;
+      }
+      
+      if (cp.length !== 5) {
+        toast('El código postal debe tener 5 dígitos', 'error');
+        return false;
+      }
+      
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast('Email inválido', 'error');
+        return false;
+      }
+      
+      return true;
+      
+    case 3:
+      if (!ticketBase64) {
+        toast('Debes subir una imagen del ticket', 'error');
+        return false;
+      }
+      return true;
+      
+    default:
+      return true;
+  }
+}
+
+function validarCampoWizard(input) {
+  if (input.value.trim()) {
+    input.classList.remove('invalid');
+    input.classList.add('valid');
+  } else {
+    input.classList.remove('valid');
+    input.classList.add('invalid');
+  }
+}
+
+function actualizarResumenWizard() {
+  // Obtener nombre de la tienda seleccionada
+  const empresaSelect = document.getElementById('empresaId');
+  const tiendaNombre = empresaSelect.options[empresaSelect.selectedIndex]?.text || '-';
+  
+  // Actualizar resumen
+  document.getElementById('summaryTienda').textContent = tiendaNombre;
+  document.getElementById('summaryRfc').textContent = document.getElementById('solRfc').value || '-';
+  document.getElementById('summaryRazon').textContent = document.getElementById('solRazon').value || '-';
+  document.getElementById('summaryEmail').textContent = document.getElementById('solEmail').value || '-';
+  
+  const regimenSelect = document.getElementById('solRegimen');
+  const regimenTexto = regimenSelect.options[regimenSelect.selectedIndex]?.text || '-';
+  document.getElementById('summaryRegimen').textContent = regimenTexto;
+  
+  const usoCfdiSelect = document.getElementById('solUsoCfdi');
+  const usoCfdiTexto = usoCfdiSelect.options[usoCfdiSelect.selectedIndex]?.text || '-';
+  document.getElementById('summaryUsoCfdi').textContent = usoCfdiTexto;
+  
+  document.getElementById('summaryCp').textContent = document.getElementById('solCp').value || '-';
+  
+  const monto = document.getElementById('solMonto').value;
+  document.getElementById('summaryMonto').textContent = monto ? '$' + parseFloat(monto).toLocaleString() : '-';
+  
+  // Mostrar imágenes si existen
+  if (ticketBase64) {
+    document.getElementById('summaryTicketBox').style.display = 'block';
+    document.getElementById('summaryTicketImg').src = ticketBase64;
+  } else {
+    document.getElementById('summaryTicketBox').style.display = 'none';
+  }
+  
+  if (csfBase64) {
+    document.getElementById('summaryCsfBox').style.display = 'block';
+    document.getElementById('summaryCsfImg').src = csfBase64;
+  } else {
+    document.getElementById('summaryCsfBox').style.display = 'none';
+  }
 }
 
 // ============================================
@@ -1064,6 +1231,7 @@ async function enviarSolicitud() {
     if (result.success) {
       toast('¡Solicitud enviada correctamente!', 'success');
       limpiarFormularioSolicitud();
+      resetWizard();
       
       if (sesion?.tipo === 'cliente') {
         cargarDashboard();
@@ -1103,6 +1271,11 @@ function limpiarFormularioSolicitud() {
   
   document.getElementById('ticketFile').value = '';
   document.getElementById('csfFile').value = '';
+  
+  // Limpiar validaciones visuales
+  document.querySelectorAll('.input.valid, .input.invalid').forEach(input => {
+    input.classList.remove('valid', 'invalid');
+  });
 }
 
 // ============================================
@@ -1156,20 +1329,13 @@ function renderHistorial(solicitudes) {
 }
 
 function abrirPanelDetalle(solicitudId) {
-  console.log('Abriendo panel para solicitud:', solicitudId);
-  console.log('Cache disponible:', solicitudesCache);
-  
   const solicitud = solicitudesCache.find(s => s.id === solicitudId);
   
   if (!solicitud) {
     toast('No se encontró la solicitud', 'error');
-    console.error('Solicitud no encontrada:', solicitudId);
     return;
   }
   
-  console.log('Solicitud encontrada:', solicitud);
-  
-  // Verificar elementos
   const panelInfo = document.getElementById('detallePanelInfo');
   const panelFiscal = document.getElementById('detallePanelFiscal');
   const panelTicket = document.getElementById('detallePanelTicket');
@@ -1178,12 +1344,9 @@ function abrirPanelDetalle(solicitudId) {
   const viewHist = document.getElementById('view-historial');
   
   if (!panelInfo || !panelFiscal || !panelTicket || !panelCSF || !panel || !viewHist) {
-    console.error('Elementos del panel no encontrados');
     toast('Error: elementos del panel no encontrados', 'error');
     return;
   }
-  
-  console.log('Todos los elementos encontrados, rellenando información...');
   
   // Información General
   panelInfo.innerHTML = `
@@ -1261,13 +1424,9 @@ function abrirPanelDetalle(solicitudId) {
     panelCSF.innerHTML = '<div class="detalle-no-file">Sin CSF</div>';
   }
   
-  console.log('Información rellenada, mostrando panel...');
-  
   // Mostrar panel
   panel.classList.add('show');
   viewHist.classList.add('con-panel');
-  
-  console.log('Panel mostrado');
   
   // Overlay mobile
   if (window.innerWidth <= 768) {
@@ -1279,12 +1438,10 @@ function abrirPanelDetalle(solicitudId) {
       document.body.appendChild(overlay);
     }
     overlay.classList.add('show');
-    console.log('Overlay mobile agregado');
   }
 }
 
 function cerrarPanelDetalle() {
-  console.log('Cerrando panel...');
   const panel = document.getElementById('detalleSolicitudPanel');
   const viewHist = document.getElementById('view-historial');
   
@@ -1295,8 +1452,6 @@ function cerrarPanelDetalle() {
   if (overlay) {
     overlay.classList.remove('show');
   }
-  
-  console.log('Panel cerrado');
 }
 
 // ============================================
