@@ -440,127 +440,229 @@
           </div>
         </div>
 
-        <!-- SOLICITAR -->
+        <!-- SOLICITAR CON WIZARD -->
         <div id="view-solicitar" class="content-view">
           <div class="page-header-compact">
             <h1 class="page-title-compact">📝 Nueva Solicitud</h1>
           </div>
 
-          <div class="card-compact">
-            <div class="card-header-compact">
-              <span class="card-icon">🏪</span>
-              <span class="card-title-text">Tienda</span>
+          <!-- WIZARD CONTAINER -->
+          <div class="wizard-container">
+            <!-- Steps visuales -->
+            <div class="wizard-steps">
+              <div class="wizard-step active" data-step="1">
+                <div class="wizard-step-number">1</div>
+                <div class="wizard-step-label">Tienda</div>
+              </div>
+              <div class="wizard-step" data-step="2">
+                <div class="wizard-step-number">2</div>
+                <div class="wizard-step-label">Datos Fiscales</div>
+              </div>
+              <div class="wizard-step" data-step="3">
+                <div class="wizard-step-number">3</div>
+                <div class="wizard-step-label">Datos de Compra</div>
+              </div>
+              <div class="wizard-step" data-step="4">
+                <div class="wizard-step-number">4</div>
+                <div class="wizard-step-label">Confirmar</div>
+              </div>
             </div>
-            <select id="empresaId" class="input" required>
-              <option value="">Selecciona una tienda...</option>
-            </select>
-          </div>
 
-          <div id="selectorRazon" class="card-compact hidden">
-            <div class="card-header-compact">
-              <span class="card-icon">🏢</span>
-              <span class="card-title-text">Razón Social</span>
-            </div>
-            <select id="solRazonSelect" class="input" onchange="cargarDatosRazon(this.value)">
-              <option value="">Selecciona o ingresa nueva...</option>
-            </select>
-          </div>
+            <!-- Contenido del wizard -->
+            <div class="wizard-content">
+              
+              <!-- PASO 1: Selección de tienda -->
+              <div class="wizard-panel active" id="wizardStep1">
+                <div class="card-header-compact">
+                  <span class="card-icon">🏪</span>
+                  <span class="card-title-text">Selecciona la Tienda</span>
+                </div>
+                <select id="empresaId" class="input" required>
+                  <option value="">Selecciona una tienda...</option>
+                </select>
 
-          <div class="content-grid">
-            <div class="card-compact">
-              <div class="card-header-compact">
-                <span class="card-icon">💳</span>
-                <span class="card-title-text">Datos Fiscales</span>
+                <div id="selectorRazon" class="hidden" style="margin-top: 20px;">
+                  <div class="card-header-compact">
+                    <span class="card-icon">🏢</span>
+                    <span class="card-title-text">Razón Social</span>
+                  </div>
+                  <select id="solRazonSelect" class="input" onchange="cargarDatosRazon(this.value)">
+                    <option value="">Selecciona o ingresa nueva...</option>
+                  </select>
+                </div>
               </div>
 
-              <div class="form-group-compact">
-                <label>RFC *</label>
-                <div style="position: relative;">
-                  <input type="text" id="solRfc" class="input input-upper" placeholder="XAXX010101000" maxlength="13" required oninput="buscarDatosPorRFC(this.value)">
-                  <div id="rfcLoader" class="rfc-loader hidden">
-                    <div class="rfc-spinner"></div>
+              <!-- PASO 2: Datos Fiscales -->
+              <div class="wizard-panel" id="wizardStep2">
+                <div class="card-header-compact">
+                  <span class="card-icon">💳</span>
+                  <span class="card-title-text">Datos Fiscales</span>
+                </div>
+
+                <div class="form-group-compact">
+                  <label>RFC *</label>
+                  <div style="position: relative;">
+                    <input type="text" id="solRfc" class="input input-upper" placeholder="XAXX010101000" maxlength="13" required oninput="buscarDatosPorRFC(this.value); validarCampoWizard(this);">
+                    <div id="rfcLoader" class="rfc-loader hidden">
+                      <div class="rfc-spinner"></div>
+                    </div>
+                  </div>
+                  <div id="rfcStatus" class="rfc-status hidden"></div>
+                </div>
+
+                <div class="form-group-compact">
+                  <label>Razón Social *</label>
+                  <input type="text" id="solRazon" class="input" placeholder="Mi Empresa SA de CV" required oninput="validarCampoWizard(this);">
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group-compact">
+                    <label>Régimen *</label>
+                    <select id="solRegimen" class="input" required onchange="validarCampoWizard(this);"><option value="">Selecciona...</option></select>
+                  </div>
+                  <div class="form-group-compact">
+                    <label>C.P. *</label>
+                    <input type="text" id="solCp" class="input" placeholder="44100" maxlength="5" required oninput="validarCampoWizard(this);">
                   </div>
                 </div>
-                <div id="rfcStatus" class="rfc-status hidden"></div>
-              </div>
 
-              <div class="form-group-compact">
-                <label>Razón Social *</label>
-                <input type="text" id="solRazon" class="input" placeholder="Mi Empresa SA de CV" required>
-              </div>
-
-              <div class="form-row">
                 <div class="form-group-compact">
-                  <label>Régimen *</label>
-                  <select id="solRegimen" class="input" required><option value="">Selecciona...</option></select>
+                  <label>Uso CFDI *</label>
+                  <select id="solUsoCfdi" class="input" required onchange="validarCampoWizard(this);"><option value="">Selecciona...</option></select>
                 </div>
+
                 <div class="form-group-compact">
-                  <label>C.P. *</label>
-                  <input type="text" id="solCp" class="input" placeholder="44100" maxlength="5" required>
+                  <label>Email *</label>
+                  <input type="email" id="solEmail" class="input" placeholder="tu@correo.com" required oninput="validarCampoWizard(this);">
+                </div>
+
+                <div class="form-group-compact">
+                  <label>CC</label>
+                  <input type="email" id="solCC" class="input" placeholder="copia@correo.com">
+                </div>
+
+                <div class="form-group-compact">
+                  <label>📄 CSF</label>
+                  <div class="file-box-compact" onclick="document.getElementById('csfFile').click()">
+                    <input type="file" id="csfFile" accept="image/*,application/pdf" onchange="previewCSF(this)" style="display:none">
+                    <div id="csfUploadText" class="file-placeholder-compact"><span>📄 Subir CSF</span></div>
+                    <div id="csfPreview" class="file-preview-name-compact hidden"></div>
+                  </div>
+                  <div id="csfFromRazon" class="csf-from-razon hidden">
+                    <small>✅ Se usará la CSF guardada en tu perfil</small>
+                  </div>
                 </div>
               </div>
 
-              <div class="form-group-compact">
-                <label>Uso CFDI *</label>
-                <select id="solUsoCfdi" class="input" required><option value="">Selecciona...</option></select>
+              <!-- PASO 3: Datos de Compra -->
+              <div class="wizard-panel" id="wizardStep3">
+                <div class="card-header-compact">
+                  <span class="card-icon">🧾</span>
+                  <span class="card-title-text">Datos de Compra</span>
+                </div>
+
+                <div class="form-group-compact">
+                  <label>Monto Total</label>
+                  <input type="number" id="solMonto" class="input" placeholder="1000.00" step="0.01">
+                </div>
+
+                <div class="form-group-compact">
+                  <label>Folio</label>
+                  <input type="text" id="solFolio" class="input" placeholder="ABC123">
+                </div>
+
+                <div class="form-group-compact">
+                  <label>Notas</label>
+                  <textarea id="solNotas" class="input" placeholder="Información adicional..." rows="3"></textarea>
+                </div>
+
+                <div class="form-group-compact">
+                  <label>📷 Ticket *</label>
+                  <div class="file-box-compact" onclick="document.getElementById('ticketFile').click()">
+                    <input type="file" id="ticketFile" accept="image/*" onchange="previewTicket(this)" style="display:none">
+                    <div id="ticketUploadText" class="file-placeholder-compact"><span>📷 Subir ticket</span></div>
+                    <img id="ticketPreview" class="file-preview-compact hidden" alt="Preview">
+                  </div>
+                </div>
               </div>
 
-              <div class="form-group-compact">
-                <label>Email *</label>
-                <input type="email" id="solEmail" class="input" placeholder="tu@correo.com" required>
+              <!-- PASO 4: Resumen y Confirmación -->
+              <div class="wizard-panel" id="wizardStep4">
+                <div class="card-header-compact">
+                  <span class="card-icon">✅</span>
+                  <span class="card-title-text">Confirma tu Solicitud</span>
+                </div>
+
+                <div class="wizard-summary">
+                  <div class="wizard-summary-title">📋 Resumen de tu Solicitud</div>
+                  
+                  <div class="wizard-summary-grid">
+                    <div class="wizard-summary-item">
+                      <span class="wizard-summary-label">Tienda</span>
+                      <span class="wizard-summary-value" id="summaryTienda">-</span>
+                    </div>
+                    <div class="wizard-summary-item">
+                      <span class="wizard-summary-label">RFC</span>
+                      <span class="wizard-summary-value" id="summaryRfc">-</span>
+                    </div>
+                    <div class="wizard-summary-item">
+                      <span class="wizard-summary-label">Razón Social</span>
+                      <span class="wizard-summary-value" id="summaryRazon">-</span>
+                    </div>
+                    <div class="wizard-summary-item">
+                      <span class="wizard-summary-label">Email</span>
+                      <span class="wizard-summary-value" id="summaryEmail">-</span>
+                    </div>
+                    <div class="wizard-summary-item">
+                      <span class="wizard-summary-label">Régimen</span>
+                      <span class="wizard-summary-value" id="summaryRegimen">-</span>
+                    </div>
+                    <div class="wizard-summary-item">
+                      <span class="wizard-summary-label">Uso CFDI</span>
+                      <span class="wizard-summary-value" id="summaryUsoCfdi">-</span>
+                    </div>
+                    <div class="wizard-summary-item">
+                      <span class="wizard-summary-label">C.P.</span>
+                      <span class="wizard-summary-value" id="summaryCp">-</span>
+                    </div>
+                    <div class="wizard-summary-item">
+                      <span class="wizard-summary-label">Monto</span>
+                      <span class="wizard-summary-value" id="summaryMonto" style="color: var(--success); font-weight: 800;">-</span>
+                    </div>
+                  </div>
+
+                  <div class="wizard-summary-images">
+                    <div class="wizard-summary-image-box" id="summaryTicketBox" style="display: none;">
+                      <img id="summaryTicketImg" src="" alt="Ticket">
+                      <span class="wizard-summary-image-label">📷 Ticket</span>
+                    </div>
+                    <div class="wizard-summary-image-box" id="summaryCsfBox" style="display: none;">
+                      <img id="summaryCsfImg" src="" alt="CSF">
+                      <span class="wizard-summary-image-label">📄 CSF</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div class="form-group-compact">
-                <label>CC</label>
-                <input type="email" id="solCC" class="input" placeholder="copia@correo.com">
-              </div>
             </div>
 
-            <div class="card-compact">
-              <div class="card-header-compact">
-                <span class="card-icon">🧾</span>
-                <span class="card-title-text">Datos de Compra</span>
+            <!-- Botones de navegación -->
+            <div class="wizard-actions">
+              <div class="wizard-actions-left">
+                <button type="button" class="btn btn-secondary" id="btnWizardPrev" onclick="wizardPrevStep()" style="display: none;">
+                  ← Anterior
+                </button>
               </div>
-
-              <div class="form-group-compact">
-                <label>Monto Total</label>
-                <input type="number" id="solMonto" class="input" placeholder="1000.00" step="0.01">
-              </div>
-
-              <div class="form-group-compact">
-                <label>Folio</label>
-                <input type="text" id="solFolio" class="input" placeholder="ABC123">
-              </div>
-
-              <div class="form-group-compact">
-                <label>Notas</label>
-                <textarea id="solNotas" class="input" placeholder="Información adicional..." rows="3"></textarea>
-              </div>
-
-              <div class="form-group-compact">
-                <label>📷 Ticket *</label>
-                <div class="file-box-compact" onclick="document.getElementById('ticketFile').click()">
-                  <input type="file" id="ticketFile" accept="image/*" onchange="previewTicket(this)" style="display:none">
-                  <div id="ticketUploadText" class="file-placeholder-compact"><span>📷 Subir ticket</span></div>
-                  <img id="ticketPreview" class="file-preview-compact hidden" alt="Preview">
-                </div>
-              </div>
-
-              <div class="form-group-compact">
-                <label>📄 CSF</label>
-                <div class="file-box-compact" onclick="document.getElementById('csfFile').click()">
-                  <input type="file" id="csfFile" accept="image/*,application/pdf" onchange="previewCSF(this)" style="display:none">
-                  <div id="csfUploadText" class="file-placeholder-compact"><span>📄 Subir CSF</span></div>
-                  <div id="csfPreview" class="file-preview-name-compact hidden"></div>
-                </div>
-                <div id="csfFromRazon" class="csf-from-razon hidden">
-                  <small>✅ Se usará la CSF guardada en tu perfil</small>
-                </div>
+              <div class="wizard-actions-right">
+                <button type="button" class="btn btn-primary" id="btnWizardNext" onclick="wizardNextStep()">
+                  Siguiente →
+                </button>
+                <button type="button" class="btn btn-success btn-lg" id="btnWizardSubmit" onclick="enviarSolicitud()" style="display: none;">
+                  ✅ Enviar Solicitud
+                </button>
               </div>
             </div>
           </div>
-
-          <button class="btn btn-success btn-block" onclick="enviarSolicitud()">✅ Enviar Solicitud</button>
         </div>
 
         <!-- HISTORIAL -->
@@ -574,7 +676,7 @@
         </div>
 
         <!-- PANEL LATERAL DETALLE -->
-        <div id="detalleSolicitudPanel" class="detalle-panel hidden">
+        <div id="detalleSolicitudPanel" class="detalle-panel">
           <div class="detalle-panel-header">
             <button class="btn-cerrar-panel" onclick="cerrarPanelDetalle()">←</button>
             <h3>Detalle de Solicitud</h3>
