@@ -19,6 +19,7 @@ let razonCsfBase64 = '';
 let perfilCsfBase64 = '';
 let rfcTimeout = null;
 let razonSeleccionadaId = null;
+let imagenActual = '';
 
 // ============================================
 // INICIALIZACIÓN
@@ -1169,7 +1170,7 @@ function renderSolicitudesEmpresa(data) {
     return;
   }
   
-  tbody.innerHTML = data.map((s, index) => {
+  tbody.innerHTML = data.map(s => {
     const tieneTicket = s.ticket && s.ticket.length > 100;
     const tieneCsf = s.csf && s.csf.length > 100;
     
@@ -1179,8 +1180,8 @@ function renderSolicitudesEmpresa(data) {
       <td>${s.razon}</td>
       <td>${s.rfc}</td>
       <td class="tabla-monto">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</td>
-      <td>${tieneTicket ? `<button class="btn btn-sm btn-secondary" onclick="verImagenSolicitud('${s.id}', 'ticket')">📷</button>` : '<span class="tabla-no-file">-</span>'}</td>
-      <td>${tieneCsf ? `<button class="btn btn-sm btn-secondary" onclick="verImagenSolicitud('${s.id}', 'csf')">📄</button>` : '<span class="tabla-no-file">-</span>'}</td>
+      <td>${tieneTicket ? `<button class="btn btn-sm btn-secondary" onclick="verTicketSolicitud('${s.id}')">📷</button>` : '-'}</td>
+      <td>${tieneCsf ? `<button class="btn btn-sm btn-secondary" onclick="verCsfSolicitud('${s.id}')">📄</button>` : '-'}</td>
       <td><span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span></td>
       <td class="tabla-acciones">
         <button class="btn btn-sm btn-primary" onclick="verDetalle('${s.id}')">👁️</button>
@@ -1192,6 +1193,31 @@ function renderSolicitudesEmpresa(data) {
     </tr>
   `}).join('');
 }
+
+function verTicketSolicitud(id) {
+  const s = solicitudesData.find(x => x.id === id);
+  if (!s || !s.ticket) return;
+  mostrarImagenBase64(s.ticket);
+}
+
+function verCsfSolicitud(id) {
+  const s = solicitudesData.find(x => x.id === id);
+  if (!s || !s.csf) return;
+  mostrarImagenBase64(s.csf);
+}
+
+function mostrarImagenBase64(src) {
+  if (!src) return;
+  
+  // Asegurar prefijo correcto
+  if (!src.startsWith('data:')) {
+    src = 'data:image/jpeg;base64,' + src;
+  }
+  
+  document.getElementById('modalImg').src = src;
+  document.getElementById('modalImagen').classList.remove('hidden');
+}
+
 function verImagenSolicitud(id, tipo) {
   const s = solicitudesData.find(x => x.id === id);
   if (!s) return;
@@ -1266,8 +1292,8 @@ function verDetalle(id) {
   // Ticket
   const ticketContainer = document.getElementById('detalleTicket');
   if (s.ticket && s.ticket.length > 100) {
-    const ticketSrc = s.ticket.startsWith('data:') ? s.ticket : `data:image/jpeg;base64,${s.ticket}`;
-    ticketContainer.innerHTML = `<img src="${ticketSrc}" style="max-width:100%; cursor:pointer; border-radius:8px;" onclick="verImagenSolicitud('${s.id}', 'ticket')">`;
+    const ticketSrc = s.ticket.startsWith('data:') ? s.ticket : 'data:image/jpeg;base64,' + s.ticket;
+    ticketContainer.innerHTML = `<img src="${ticketSrc}" style="max-width:100%; cursor:pointer; border-radius:8px;" onclick="verTicketSolicitud('${s.id}')">`;
   } else {
     ticketContainer.innerHTML = '<p style="color:var(--gray-400);">Sin ticket</p>';
   }
@@ -1275,19 +1301,21 @@ function verDetalle(id) {
   // CSF
   const csfContainer = document.getElementById('detalleCSF');
   if (s.csf && s.csf.length > 100) {
-    const csfSrc = s.csf.startsWith('data:') ? s.csf : `data:image/jpeg;base64,${s.csf}`;
-    csfContainer.innerHTML = `<img src="${csfSrc}" style="max-width:200px; cursor:pointer; border-radius:8px;" onclick="verImagenSolicitud('${s.id}', 'csf')">`;
+    const csfSrc = s.csf.startsWith('data:') ? s.csf : 'data:image/jpeg;base64,' + s.csf;
+    csfContainer.innerHTML = `<img src="${csfSrc}" style="max-width:200px; cursor:pointer; border-radius:8px;" onclick="verCsfSolicitud('${s.id}')">`;
   } else {
     csfContainer.innerHTML = '<p style="color:var(--gray-400);">Sin CSF</p>';
   }
   
   document.getElementById('detalleAcciones').innerHTML = s.estatus === 'Pendiente' && sesion.permisos !== 'lectura' ? `
-    <button class="btn btn-success" onclick="cambiarEstatus('${s.id}', 'Facturado'); cerrarModalDetalle();">✅ Marcar Facturado</button>
+    <button class="btn btn-success" onclick="cambiarEstatus('${s.id}', 'Facturado'); cerrarModalDetalle();">✅ Facturado</button>
     <button class="btn btn-danger" onclick="cambiarEstatus('${s.id}', 'Rechazado'); cerrarModalDetalle();">❌ Rechazar</button>
   ` : `<span class="badge badge-${getBadgeClass(s.estatus)}" style="font-size:14px;padding:10px 20px;">${s.estatus}</span>`;
   
   document.getElementById('modalDetalle').classList.remove('hidden');
 }
+
+
 
 function cerrarModalDetalle() {
   document.getElementById('modalDetalle').classList.add('hidden');
@@ -1471,15 +1499,7 @@ function compartirQR() {
 // MODALES DE IMAGEN
 // ============================================
 function verImagen(src) {
-  if (!src) return;
-  
-  // Asegurar prefijo correcto
-  if (!src.startsWith('data:') && src.length > 100) {
-    src = `data:image/jpeg;base64,${src}`;
-  }
-  
-  document.getElementById('modalImg').src = src;
-  document.getElementById('modalImagen').classList.remove('hidden');
+  mostrarImagenBase64(src);
 }
 
 function cerrarModalImagen(event) {
