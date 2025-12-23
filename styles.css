@@ -1064,6 +1064,54 @@ textarea.input {
   font-weight: 600;
 }
 
+/* ============================================
+   WIZARD - MEJORAS VISUALES
+   ============================================ */
+.wizard-container .input {
+  border: 1px solid var(--gray-300);
+  transition: all 0.2s ease;
+}
+
+.wizard-container .input:hover {
+  border-color: var(--gray-400);
+}
+
+.wizard-container .input:focus {
+  border-color: var(--primary);
+  border-width: 1px;
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.wizard-panel {
+  padding: 20px 0;
+}
+
+/* Espaciado entre campos del wizard */
+.wizard-panel .form-group-compact + .form-group-compact {
+  margin-top: 16px;
+}
+
+.wizard-panel .form-row {
+  margin-bottom: 14px;
+}
+
+/* Select personalizado para el wizard */
+.wizard-container select.input {
+  background-color: #fff;
+  border: 1px solid var(--gray-300);
+}
+
+.wizard-container select.input:focus {
+  background-color: #fff;
+}
+
+/* Mejorar aspecto de dropdowns nativos en móvil */
+@media (max-width: 768px) {
+  .wizard-container select.input {
+    font-size: 16px; /* Previene zoom en iOS */
+    height: 48px;
+  }
+}
 /* Validación visual de campos */
 .input.valid {
   border-color: var(--success);
