@@ -1563,17 +1563,20 @@ textarea.input {
 /* ============================================
    PANEL LATERAL DETALLE
    ============================================ */
+
 .detalle-panel {
   position: fixed;
   top: 0;
-  right: -450px;
-  width: 450px;
+  right: -500px;
+  width: 500px;
   height: 100vh;
   background: #fff;
-  box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   transition: right 0.3s ease;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .detalle-panel.show {
@@ -1583,59 +1586,60 @@ textarea.input {
 .detalle-panel-header {
   position: sticky;
   top: 0;
-  background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detalle-panel-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .btn-cerrar-panel {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   color: white;
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition);
+  transition: all 0.2s;
 }
 
 .btn-cerrar-panel:hover {
-  background: rgba(255,255,255,0.3);
-  transform: translateX(-4px);
-}
-
-.detalle-panel-header h3 {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-2px);
 }
 
 .detalle-panel-content {
+  flex: 1;
   padding: 24px;
+  overflow-y: auto;
 }
 
 .detalle-section {
   background: var(--gray-50);
-  border-radius: var(--radius);
+  border-radius: 12px;
   padding: 20px;
-  margin-bottom: 16px;
-  border: 1px solid var(--gray-200);
+  margin-bottom: 20px;
 }
 
 .detalle-section h4 {
+  margin: 0 0 16px 0;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--gray-900);
-  margin-bottom: 14px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1644,9 +1648,9 @@ textarea.input {
 .detalle-info-row {
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
+  align-items: flex-start;
+  padding: 12px 0;
   border-bottom: 1px solid var(--gray-200);
-  font-size: 14px;
 }
 
 .detalle-info-row:last-child {
@@ -1654,47 +1658,62 @@ textarea.input {
 }
 
 .detalle-info-label {
-  font-weight: 600;
+  font-size: 13px;
   color: var(--gray-600);
+  font-weight: 500;
+  flex-shrink: 0;
+  width: 40%;
 }
 
 .detalle-info-value {
+  font-size: 14px;
   color: var(--gray-900);
+  font-weight: 600;
   text-align: right;
-  font-weight: 500;
+  word-break: break-word;
+  flex: 1;
 }
 
 .detalle-imagen-preview {
   width: 100%;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   cursor: pointer;
-  transition: var(--transition);
-  border: 2px solid var(--gray-200);
+  transition: transform 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .detalle-imagen-preview:hover {
   transform: scale(1.02);
-  border-color: var(--primary);
 }
 
 .detalle-no-file {
+  padding: 40px 20px;
   text-align: center;
-  padding: 20px;
   color: var(--gray-400);
   font-size: 14px;
+  background: var(--gray-100);
+  border-radius: 8px;
+  border: 2px dashed var(--gray-300);
 }
 
+/* Cuando el panel está abierto, ajustar el view-historial en desktop */
+.view-historial.con-panel {
+  margin-right: 500px;
+  transition: margin-right 0.3s ease;
+}
+
+/* Overlay para mobile */
 .panel-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
   z-index: 999;
   opacity: 0;
   visibility: hidden;
-  transition: var(--transition);
+  transition: all 0.3s;
 }
 
 .panel-overlay.show {
@@ -1702,10 +1721,49 @@ textarea.input {
   visibility: visible;
 }
 
-#view-historial.con-panel {
-  margin-right: 450px;
+/* ============================================
+   RESPONSIVE PANEL LATERAL
+   ============================================ */
+
+@media (max-width: 768px) {
+  .detalle-panel {
+    width: 100%;
+    right: -100%;
+  }
+  
+  .detalle-panel.show {
+    right: 0;
+  }
+  
+  .view-historial.con-panel {
+    margin-right: 0;
+  }
+  
+  .detalle-panel-content {
+    padding: 16px;
+  }
+  
+  .detalle-section {
+    padding: 16px;
+  }
 }
 
+@media (max-width: 500px) {
+  .detalle-info-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .detalle-info-label,
+  .detalle-info-value {
+    width: 100%;
+    text-align: left;
+  }
+  
+  .detalle-info-value {
+    font-size: 15px;
+  }
+}
 /* ============================================
    TOAST
    ============================================ */
