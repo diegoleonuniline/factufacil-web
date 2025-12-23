@@ -1672,3 +1672,167 @@ function solicitarPermisoNotificaciones() {
 window.addEventListener('beforeunload', () => {
   if (pollingInterval) clearInterval(pollingInterval);
 });
+// ============================================
+// PANEL LATERAL DETALLE (agregar al final del archivo)
+// ============================================
+let solicitudesCache = [];
+
+// Modificar función cargarHistorial para guardar en caché
+async function cargarHistorial() {
+  if (sesion?.tipo !== 'cliente') return;
+  
+  const container = document.getElementById('historialList');
+  container.innerHTML = '<div class="loader"></div>';
+  
+  try {
+    const result = await apiGet('/api/solicitudes/mis');
+    
+    if (result.success && result.data.length > 0) {
+      solicitudesCache = result.data; // Guardar en caché
+      renderHistorial(result.data);
+    } else {
+      container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No tienes solicitudes</p></div>';
+    }
+  } catch (e) {
+    container.innerHTML = '<div class="empty"><p>Error al cargar</p></div>';
+  }
+}
+
+function renderHistorial(solicitudes) {
+  const container = document.getElementById('historialList');
+  
+  if (solicitudes.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No tienes solicitudes aún</p></div>';
+    return;
+  }
+  
+  container.innerHTML = solicitudes.map(s => `
+    <div class="list-item" onclick="abrirPanelDetalle('${s.id}')">
+      <div class="list-header">
+        <div class="list-title">${s.tienda || 'Tienda'}</div>
+        <div class="list-amount">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</div>
+      </div>
+      <div class="list-details">
+        <strong>RFC:</strong> ${s.rfc}<br>
+        <strong>Razón:</strong> ${s.razon}
+      </div>
+      <div class="list-meta">
+        <span>${formatFecha(s.fecha)}</span>
+        <span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Abrir panel de detalle
+function abrirPanelDetalle(solicitudId) {
+  const solicitud = solicitudesCache.find(s => s.id === solicitudId);
+  if (!solicitud) return;
+  
+  // Información General
+  document.getElementById('detallePanelInfo').innerHTML = `
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Tienda</span>
+      <span class="detalle-info-value">${solicitud.tienda || 'N/A'}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Fecha</span>
+      <span class="detalle-info-value">${formatFecha(solicitud.fecha)}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Estado</span>
+      <span class="detalle-info-value"><span class="badge badge-${getBadgeClass(solicitud.estatus)}">${solicitud.estatus}</span></span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Monto</span>
+      <span class="detalle-info-value" style="color: var(--success-dark); font-weight: 700;">${solicitud.monto ? '$' + parseFloat(solicitud.monto).toLocaleString() : '-'}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Folio</span>
+      <span class="detalle-info-value">${solicitud.folio || '-'}</span>
+    </div>
+    ${solicitud.notas ? `
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Notas</span>
+      <span class="detalle-info-value">${solicitud.notas}</span>
+    </div>
+    ` : ''}
+  `;
+  
+  // Datos Fiscales
+  document.getElementById('detallePanelFiscal').innerHTML = `
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">RFC</span>
+      <span class="detalle-info-value">${solicitud.rfc}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Razón Social</span>
+      <span class="detalle-info-value">${solicitud.razon}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Régimen</span>
+      <span class="detalle-info-value">${solicitud.regimen}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">C.P.</span>
+      <span class="detalle-info-value">${solicitud.cp}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Uso CFDI</span>
+      <span class="detalle-info-value">${solicitud.uso_cfdi}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Email</span>
+      <span class="detalle-info-value">${solicitud.email}</span>
+    </div>
+  `;
+  
+  // Ticket
+  if (solicitud.ticket && solicitud.ticket.length > 50) {
+    document.getElementById('detallePanelTicket').innerHTML = `
+      <img src="${solicitud.ticket}" class="detalle-imagen-preview" onclick="mostrarImagenBase64('${solicitud.ticket}')">
+    `;
+  } else {
+    document.getElementById('detallePanelTicket').innerHTML = `
+      <div class="detalle-no-file">Sin ticket</div>
+    `;
+  }
+  
+  // CSF
+  if (solicitud.csf && solicitud.csf.length > 50) {
+    document.getElementById('detallePanelCSF').innerHTML = `
+      <img src="${solicitud.csf}" class="detalle-imagen-preview" onclick="mostrarImagenBase64('${solicitud.csf}')">
+    `;
+  } else {
+    document.getElementById('detallePanelCSF').innerHTML = `
+      <div class="detalle-no-file">Sin CSF</div>
+    `;
+  }
+  
+  // Mostrar panel
+  document.getElementById('detalleSolicitudPanel').classList.add('show');
+  document.getElementById('view-historial').classList.add('con-panel');
+  
+  // Overlay mobile
+  if (window.innerWidth <= 768) {
+    let overlay = document.querySelector('.panel-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'panel-overlay';
+      overlay.onclick = cerrarPanelDetalle;
+      document.body.appendChild(overlay);
+    }
+    overlay.classList.add('show');
+  }
+}
+
+// Cerrar panel
+function cerrarPanelDetalle() {
+  document.getElementById('detalleSolicitudPanel').classList.remove('show');
+  document.getElementById('view-historial').classList.remove('con-panel');
+  
+  const overlay = document.querySelector('.panel-overlay');
+  if (overlay) {
+    overlay.classList.remove('show');
+  }
+}
