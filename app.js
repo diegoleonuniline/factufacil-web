@@ -29,15 +29,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   
   // Verificar parámetro empresa en URL
-  const params = new URLSearchParams(window.location.search);
-  const empresaParam = params.get('empresa');
-  if (empresaParam) {
-    setTimeout(() => {
-      const select = document.getElementById('empresaId');
-      if (select) select.value = empresaParam;
-    }, 500);
-  }
-});
+// Verificar parámetro empresa en URL
+const params = new URLSearchParams(window.location.search);
+const empresaParam = params.get('empresa');
+if (empresaParam) {
+  // Guardar para usar después de login/invitado
+  sessionStorage.setItem('empresaPreseleccionada', empresaParam);
+}
 
 // ============================================
 // EVENT LISTENERS
@@ -407,6 +405,18 @@ function mostrarPanelInvitado() {
   
   // Ocultar selector de razón social
   document.getElementById('selectorRazon')?.classList.add('hidden');
+
+// Preseleccionar empresa si viene de QR
+setTimeout(() => {
+  const empresaPre = sessionStorage.getItem('empresaPreseleccionada');
+  if (empresaPre) {
+    const select = document.getElementById('empresaId');
+    if (select) {
+      select.value = empresaPre;
+      sessionStorage.removeItem('empresaPreseleccionada');
+    }
+  }
+}, 300);
   
   // Ir a solicitar
   navegarA('solicitar');
@@ -446,6 +456,19 @@ function mostrarPanelCliente() {
   document.getElementById('selectorRazon')?.classList.remove('hidden');
   cargarSelectorRazones();
   cargarListaRazones();
+
+  // Preseleccionar empresa si viene de QR
+setTimeout(() => {
+  const empresaPre = sessionStorage.getItem('empresaPreseleccionada');
+  if (empresaPre) {
+    const select = document.getElementById('empresaId');
+    if (select) {
+      select.value = empresaPre;
+      sessionStorage.removeItem('empresaPreseleccionada');
+    }
+    navegarA('solicitar');
+  }
+}, 300);
   
   // Cargar dashboard
   cargarDashboard();
