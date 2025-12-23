@@ -1125,6 +1125,7 @@ async function cargarHistorial() {
     }
   } catch (e) {
     container.innerHTML = '<div class="empty"><p>Error al cargar</p></div>';
+    console.error('Error cargando historial:', e);
   }
 }
 
@@ -1155,13 +1156,37 @@ function renderHistorial(solicitudes) {
 }
 
 function abrirPanelDetalle(solicitudId) {
+  console.log('Abriendo panel para solicitud:', solicitudId);
+  console.log('Cache disponible:', solicitudesCache);
+  
   const solicitud = solicitudesCache.find(s => s.id === solicitudId);
+  
   if (!solicitud) {
     toast('No se encontró la solicitud', 'error');
+    console.error('Solicitud no encontrada:', solicitudId);
     return;
   }
   
-  document.getElementById('detallePanelInfo').innerHTML = `
+  console.log('Solicitud encontrada:', solicitud);
+  
+  // Verificar elementos
+  const panelInfo = document.getElementById('detallePanelInfo');
+  const panelFiscal = document.getElementById('detallePanelFiscal');
+  const panelTicket = document.getElementById('detallePanelTicket');
+  const panelCSF = document.getElementById('detallePanelCSF');
+  const panel = document.getElementById('detalleSolicitudPanel');
+  const viewHist = document.getElementById('view-historial');
+  
+  if (!panelInfo || !panelFiscal || !panelTicket || !panelCSF || !panel || !viewHist) {
+    console.error('Elementos del panel no encontrados');
+    toast('Error: elementos del panel no encontrados', 'error');
+    return;
+  }
+  
+  console.log('Todos los elementos encontrados, rellenando información...');
+  
+  // Información General
+  panelInfo.innerHTML = `
     <div class="detalle-info-row">
       <span class="detalle-info-label">Tienda</span>
       <span class="detalle-info-value">${solicitud.tienda || 'N/A'}</span>
@@ -1190,7 +1215,8 @@ function abrirPanelDetalle(solicitudId) {
     ` : ''}
   `;
   
-  document.getElementById('detallePanelFiscal').innerHTML = `
+  // Datos Fiscales
+  panelFiscal.innerHTML = `
     <div class="detalle-info-row">
       <span class="detalle-info-label">RFC</span>
       <span class="detalle-info-value">${solicitud.rfc}</span>
@@ -1217,25 +1243,33 @@ function abrirPanelDetalle(solicitudId) {
     </div>
   `;
   
+  // Ticket
   if (solicitud.ticket && solicitud.ticket.startsWith('http')) {
-    document.getElementById('detallePanelTicket').innerHTML = `
+    panelTicket.innerHTML = `
       <img src="${solicitud.ticket}" class="detalle-imagen-preview" onclick="mostrarImagenBase64('${solicitud.ticket}')">
     `;
   } else {
-    document.getElementById('detallePanelTicket').innerHTML = '<div class="detalle-no-file">⚠️ Sin ticket disponible</div>';
+    panelTicket.innerHTML = '<div class="detalle-no-file">⚠️ Sin ticket disponible</div>';
   }
   
+  // CSF
   if (solicitud.csf && solicitud.csf.startsWith('http')) {
-    document.getElementById('detallePanelCSF').innerHTML = `
+    panelCSF.innerHTML = `
       <img src="${solicitud.csf}" class="detalle-imagen-preview" onclick="mostrarImagenBase64('${solicitud.csf}')">
     `;
   } else {
-    document.getElementById('detallePanelCSF').innerHTML = '<div class="detalle-no-file">Sin CSF</div>';
+    panelCSF.innerHTML = '<div class="detalle-no-file">Sin CSF</div>';
   }
   
-  document.getElementById('detalleSolicitudPanel').classList.add('show');
-  document.getElementById('view-historial').classList.add('con-panel');
+  console.log('Información rellenada, mostrando panel...');
   
+  // Mostrar panel
+  panel.classList.add('show');
+  viewHist.classList.add('con-panel');
+  
+  console.log('Panel mostrado');
+  
+  // Overlay mobile
   if (window.innerWidth <= 768) {
     let overlay = document.querySelector('.panel-overlay');
     if (!overlay) {
@@ -1245,21 +1279,28 @@ function abrirPanelDetalle(solicitudId) {
       document.body.appendChild(overlay);
     }
     overlay.classList.add('show');
+    console.log('Overlay mobile agregado');
   }
 }
 
 function cerrarPanelDetalle() {
-  document.getElementById('detalleSolicitudPanel').classList.remove('show');
-  document.getElementById('view-historial').classList.remove('con-panel');
+  console.log('Cerrando panel...');
+  const panel = document.getElementById('detalleSolicitudPanel');
+  const viewHist = document.getElementById('view-historial');
+  
+  if (panel) panel.classList.remove('show');
+  if (viewHist) viewHist.classList.remove('con-panel');
   
   const overlay = document.querySelector('.panel-overlay');
   if (overlay) {
     overlay.classList.remove('show');
   }
+  
+  console.log('Panel cerrado');
 }
 
 // ============================================
-// MODAL DETALLE CLIENTE (dashboard)
+// MODAL DETALLE CLIENTE (para dashboard)
 // ============================================
 async function verDetalleSolicitudCliente(uuid) {
   showLoading('Cargando...');
