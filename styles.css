@@ -363,7 +363,7 @@ a:hover {
   font-size: 15px;
   font-family: inherit;
   background: #fff;
-  border: 2px solid var(--gray-200);
+  border: 1px solid var(--gray-300);
   border-radius: 10px;
   color: var(--gray-800);
   transition: var(--transition);
@@ -372,7 +372,8 @@ a:hover {
 .input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px var(--primary-light);
+  border-width: 1px;
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .input::placeholder {
@@ -396,12 +397,16 @@ select.input {
   background-position: right 12px center;
   background-size: 20px;
   padding-right: 44px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 @media (max-width: 768px) {
   select.input {
     appearance: auto;
     -webkit-appearance: menulist;
+    -moz-appearance: menulist;
     background-image: none;
     padding-right: 14px;
   }
@@ -1062,10 +1067,26 @@ textarea.input {
 /* Validación visual de campos */
 .input.valid {
   border-color: var(--success);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2322c55e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+  padding-right: 44px;
 }
 
 .input.invalid {
   border-color: var(--danger);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ef4444'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+  padding-right: 44px;
+}
+
+select.input.valid,
+select.input.invalid {
+  background-position: right 40px center, right 12px center;
+  background-size: 20px, 20px;
 }
 
 .field-feedback {
