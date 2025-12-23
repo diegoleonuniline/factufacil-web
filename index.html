@@ -363,75 +363,85 @@
       <!-- PANEL CLIENTE -->
       <div id="panelCliente" class="hidden">
         
-        <!-- DASHBOARD -->
-        <div id="view-dashboard" class="content-view active">
-          <div class="page-header-compact">
-            <h1 class="page-title-compact">🏠 Bienvenido, <span id="dashboardNombre">Usuario</span></h1>
-          </div>
+  <!-- DASHBOARD -->
+<div id="view-dashboard" class="content-view active">
+  <div class="page-header-compact">
+    <h1 class="page-title-compact">👋 Hola, <span id="dashboardNombre">Usuario</span></h1>
+  </div>
 
-          <!-- STATS -->
-          <div class="dashboard-stats">
-            <div class="stat-card stat-total">
-              <div class="stat-icon">📋</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statTotal">0</div>
-                <div class="stat-label">Total Solicitudes</div>
-              </div>
-            </div>
-            <div class="stat-card stat-pending">
-              <div class="stat-icon">⏳</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statPendientes">0</div>
-                <div class="stat-label">Pendientes</div>
-              </div>
-            </div>
-            <div class="stat-card stat-done">
-              <div class="stat-icon">✅</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statFacturadas">0</div>
-                <div class="stat-label">Facturadas</div>
-              </div>
-            </div>
-            <div class="stat-card stat-rejected">
-              <div class="stat-icon">❌</div>
-              <div class="stat-info">
-                <div class="stat-number" id="statRechazadas">0</div>
-                <div class="stat-label">Rechazadas</div>
-              </div>
-            </div>
-          </div>
+  <!-- BANNER PRINCIPAL -->
+  <div class="dashboard-banner">
+    <div class="dashboard-banner-content">
+      <h2>¿Qué deseas hacer?</h2>
+      <p>Selecciona una opción para continuar</p>
+    </div>
+  </div>
 
-          <!-- ACCIONES RÁPIDAS -->
-          <div class="card-compact">
-            <div class="card-header-compact">
-              <span class="card-icon">⚡</span>
-              <span class="card-title-text">Acciones Rápidas</span>
-            </div>
-            <div class="quick-actions">
-              <button class="quick-action-btn" onclick="navegarA('solicitar')">
-                <span>📝</span>
-                <span>Nueva Solicitud</span>
-              </button>
-              <button class="quick-action-btn" onclick="navegarA('historial')">
-                <span>📋</span>
-                <span>Ver Historial</span>
-              </button>
-              <button class="quick-action-btn" onclick="navegarA('perfil')">
-                <span>👤</span>
-                <span>Mi Perfil</span>
-              </button>
-            </div>
-          </div>
+  <!-- ACCIONES PRINCIPALES -->
+  <div class="dashboard-actions-grid">
+    <button class="dashboard-action-card primary" onclick="navegarA('solicitar')">
+      <div class="action-icon">📝</div>
+      <div class="action-content">
+        <h3>Nueva Solicitud</h3>
+        <p>Solicita una factura de tu compra</p>
+      </div>
+      <div class="action-arrow">→</div>
+    </button>
+    
+    <button class="dashboard-action-card" onclick="navegarA('historial')">
+      <div class="action-icon">📋</div>
+      <div class="action-content">
+        <h3>Mis Solicitudes</h3>
+        <p>Revisa el estado de tus facturas</p>
+      </div>
+      <div class="action-arrow">→</div>
+    </button>
+    
+    <button class="dashboard-action-card" onclick="navegarA('perfil')">
+      <div class="action-icon">👤</div>
+      <div class="action-content">
+        <h3>Mi Perfil</h3>
+        <p>Gestiona tus datos fiscales</p>
+      </div>
+      <div class="action-arrow">→</div>
+    </button>
+  </div>
 
-          <!-- ÚLTIMAS SOLICITUDES -->
-          <div class="card-compact">
-            <div class="card-header-compact">
-              <span class="card-icon">🕐</span>
-              <span class="card-title-text">Últimas Solicitudes</span>
-            </div>
-            <div id="ultimasSolicitudes"></div>
-          </div>
-        </div>
+  <!-- RESUMEN -->
+  <div class="card-compact">
+    <div class="card-header-compact">
+      <span class="card-icon">📊</span>
+      <span class="card-title-text">Resumen</span>
+    </div>
+    <div class="dashboard-stats-mini">
+      <div class="stat-mini">
+        <span class="stat-mini-number" id="statTotal">0</span>
+        <span class="stat-mini-label">Total</span>
+      </div>
+      <div class="stat-mini pending">
+        <span class="stat-mini-number" id="statPendientes">0</span>
+        <span class="stat-mini-label">Pendientes</span>
+      </div>
+      <div class="stat-mini done">
+        <span class="stat-mini-number" id="statFacturadas">0</span>
+        <span class="stat-mini-label">Facturadas</span>
+      </div>
+      <div class="stat-mini rejected">
+        <span class="stat-mini-number" id="statRechazadas">0</span>
+        <span class="stat-mini-label">Rechazadas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÚLTIMAS SOLICITUDES -->
+  <div class="card-compact">
+    <div class="card-header-compact">
+      <span class="card-icon">🕐</span>
+      <span class="card-title-text">Últimas Solicitudes</span>
+    </div>
+    <div id="ultimasSolicitudes"></div>
+  </div>
+</div>
 
         <!-- SOLICITAR -->
         <div id="view-solicitar" class="content-view">
