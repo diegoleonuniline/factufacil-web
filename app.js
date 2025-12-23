@@ -7,7 +7,7 @@ const API_URL = 'https://factufacil-3a5827bb6dca.herokuapp.com';
 // CONFIGURACIÓN CLOUDINARY
 // ============================================
 const CLOUDINARY_CLOUD_NAME = 'dnodzj8fz';
-const CLOUDINARY_UPLOAD_PRESET = 'factufacil'; // ⬅️ NECESITAS CREAR ESTE PRESET
+const CLOUDINARY_UPLOAD_PRESET = 'factufacil';
 
 // ============================================
 // VARIABLES GLOBALES
@@ -18,6 +18,7 @@ let catalogos = { regimenes: [], usosCfdi: [], empresas: [] };
 let razonesSociales = [];
 let solicitudesData = [];
 let usuariosData = [];
+let solicitudesCache = [];
 let ticketBase64 = '';
 let csfBase64 = '';
 let regCsfBase64 = '';
@@ -672,8 +673,6 @@ function cargarSelectorRazones() {
   }
 }
 
-// En app.js - Modificar función cargarDatosRazon
-
 function cargarDatosRazon(razonId) {
   razonSeleccionadaId = razonId || null;
   
@@ -698,11 +697,9 @@ function cargarDatosRazon(razonId) {
     document.getElementById('solUsoCfdi').value = razon.uso_cfdi || '';
     document.getElementById('solEmail').value = sesion?.usuario?.email || '';
     
-    // MODIFICACIÓN: Cargar CSF automáticamente
     if (razon.csf) {
       csfBase64 = razon.csf;
       document.getElementById('csfFromRazon').classList.remove('hidden');
-      // Ocultar el botón de subir CSF
       document.getElementById('csfUploadText').innerHTML = '<small>✅ CSF de razón social cargada</small>';
       document.getElementById('csfPreview').classList.add('hidden');
     } else {
@@ -1109,7 +1106,7 @@ function limpiarFormularioSolicitud() {
 }
 
 // ============================================
-// HISTORIAL CLIENTE
+// HISTORIAL CLIENTE CON PANEL LATERAL
 // ============================================
 async function cargarHistorial() {
   if (sesion?.tipo !== 'cliente') return;
@@ -1121,22 +1118,8 @@ async function cargarHistorial() {
     const result = await apiGet('/api/solicitudes/mis');
     
     if (result.success && result.data.length > 0) {
-      container.innerHTML = result.data.map(s => `
-        <div class="list-item" onclick="verDetalleSolicitudCliente('${s.id}')">
-          <div class="list-header">
-            <div class="list-title">${s.tienda}</div>
-            <div class="list-amount">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</div>
-          </div>
-          <div class="list-details">
-            <strong>RFC:</strong> ${s.rfc}<br>
-            <strong>Folio:</strong> ${s.folio || '-'}
-          </div>
-          <div class="list-meta">
-            <span>${formatFecha(s.fecha)}</span>
-            <span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span>
-          </div>
-        </div>
-      `).join('');
+      solicitudesCache = result.data;
+      renderHistorial(result.data);
     } else {
       container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No tienes solicitudes</p></div>';
     }
@@ -1145,6 +1128,139 @@ async function cargarHistorial() {
   }
 }
 
+function renderHistorial(solicitudes) {
+  const container = document.getElementById('historialList');
+  
+  if (solicitudes.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No tienes solicitudes aún</p></div>';
+    return;
+  }
+  
+  container.innerHTML = solicitudes.map(s => `
+    <div class="list-item" onclick="abrirPanelDetalle('${s.id}')">
+      <div class="list-header">
+        <div class="list-title">${s.tienda || 'Tienda'}</div>
+        <div class="list-amount">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</div>
+      </div>
+      <div class="list-details">
+        <strong>RFC:</strong> ${s.rfc}<br>
+        <strong>Razón:</strong> ${s.razon}
+      </div>
+      <div class="list-meta">
+        <span>${formatFecha(s.fecha)}</span>
+        <span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirPanelDetalle(solicitudId) {
+  const solicitud = solicitudesCache.find(s => s.id === solicitudId);
+  if (!solicitud) {
+    toast('No se encontró la solicitud', 'error');
+    return;
+  }
+  
+  document.getElementById('detallePanelInfo').innerHTML = `
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Tienda</span>
+      <span class="detalle-info-value">${solicitud.tienda || 'N/A'}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Fecha</span>
+      <span class="detalle-info-value">${formatFecha(solicitud.fecha)}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Estado</span>
+      <span class="detalle-info-value"><span class="badge badge-${getBadgeClass(solicitud.estatus)}">${solicitud.estatus}</span></span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Monto</span>
+      <span class="detalle-info-value" style="color: var(--success-dark); font-weight: 700;">${solicitud.monto ? '$' + parseFloat(solicitud.monto).toLocaleString() : '-'}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Folio</span>
+      <span class="detalle-info-value">${solicitud.folio || '-'}</span>
+    </div>
+    ${solicitud.notas ? `
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Notas</span>
+      <span class="detalle-info-value">${solicitud.notas}</span>
+    </div>
+    ` : ''}
+  `;
+  
+  document.getElementById('detallePanelFiscal').innerHTML = `
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">RFC</span>
+      <span class="detalle-info-value">${solicitud.rfc}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Razón Social</span>
+      <span class="detalle-info-value">${solicitud.razon}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Régimen</span>
+      <span class="detalle-info-value">${solicitud.regimen || '-'}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">C.P.</span>
+      <span class="detalle-info-value">${solicitud.cp || '-'}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Uso CFDI</span>
+      <span class="detalle-info-value">${solicitud.uso_cfdi || '-'}</span>
+    </div>
+    <div class="detalle-info-row">
+      <span class="detalle-info-label">Email</span>
+      <span class="detalle-info-value">${solicitud.email}</span>
+    </div>
+  `;
+  
+  if (solicitud.ticket && solicitud.ticket.startsWith('http')) {
+    document.getElementById('detallePanelTicket').innerHTML = `
+      <img src="${solicitud.ticket}" class="detalle-imagen-preview" onclick="mostrarImagenBase64('${solicitud.ticket}')">
+    `;
+  } else {
+    document.getElementById('detallePanelTicket').innerHTML = '<div class="detalle-no-file">⚠️ Sin ticket disponible</div>';
+  }
+  
+  if (solicitud.csf && solicitud.csf.startsWith('http')) {
+    document.getElementById('detallePanelCSF').innerHTML = `
+      <img src="${solicitud.csf}" class="detalle-imagen-preview" onclick="mostrarImagenBase64('${solicitud.csf}')">
+    `;
+  } else {
+    document.getElementById('detallePanelCSF').innerHTML = '<div class="detalle-no-file">Sin CSF</div>';
+  }
+  
+  document.getElementById('detalleSolicitudPanel').classList.add('show');
+  document.getElementById('view-historial').classList.add('con-panel');
+  
+  if (window.innerWidth <= 768) {
+    let overlay = document.querySelector('.panel-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'panel-overlay';
+      overlay.onclick = cerrarPanelDetalle;
+      document.body.appendChild(overlay);
+    }
+    overlay.classList.add('show');
+  }
+}
+
+function cerrarPanelDetalle() {
+  document.getElementById('detalleSolicitudPanel').classList.remove('show');
+  document.getElementById('view-historial').classList.remove('con-panel');
+  
+  const overlay = document.querySelector('.panel-overlay');
+  if (overlay) {
+    overlay.classList.remove('show');
+  }
+}
+
+// ============================================
+// MODAL DETALLE CLIENTE (dashboard)
+// ============================================
 async function verDetalleSolicitudCliente(uuid) {
   showLoading('Cargando...');
   
@@ -1273,8 +1389,8 @@ function renderSolicitudesEmpresa(data) {
   }
   
   tbody.innerHTML = data.map(s => {
-    const tieneTicket = s.ticket && s.ticket.length > 50;
-    const tieneCsf = s.csf && s.csf.length > 50;
+    const tieneTicket = s.ticket && s.ticket.startsWith('http');
+    const tieneCsf = s.csf && s.csf.startsWith('http');
     
     return `
     <tr>
@@ -1282,7 +1398,7 @@ function renderSolicitudesEmpresa(data) {
       <td>${s.razon}</td>
       <td>${s.rfc}</td>
       <td class="tabla-monto">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</td>
-      <td>${tieneTicket ? `<button class="btn btn-sm btn-secondary" onclick="verTicketSolicitud('${s.id}')">📷</button>` : '-'}</td>
+      <td>${tieneTicket ? `<button class="btn btn-sm btn-secondary" onclick="verTicketSolicitud('${s.id}')">📷</button>` : '⚠️'}</td>
       <td>${tieneCsf ? `<button class="btn btn-sm btn-secondary" onclick="verCsfSolicitud('${s.id}')">📄</button>` : '-'}</td>
       <td><span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span></td>
       <td class="tabla-acciones">
@@ -1331,14 +1447,14 @@ function verDetalle(id) {
   `;
   
   const ticketContainer = document.getElementById('detalleTicket');
-  if (s.ticket) {
+  if (s.ticket && s.ticket.startsWith('http')) {
     ticketContainer.innerHTML = `<img src="${s.ticket}" style="max-width:100%; cursor:pointer; border-radius:8px;" onclick="verTicketSolicitud('${s.id}')">`;
   } else {
-    ticketContainer.innerHTML = '<p style="color:var(--gray-400);">Sin ticket</p>';
+    ticketContainer.innerHTML = '<p style="color:var(--gray-400);">⚠️ Imagen no disponible</p>';
   }
   
   const csfContainer = document.getElementById('detalleCSF');
-  if (s.csf) {
+  if (s.csf && s.csf.startsWith('http')) {
     csfContainer.innerHTML = `<img src="${s.csf}" style="max-width:200px; cursor:pointer; border-radius:8px;" onclick="verCsfSolicitud('${s.id}')">`;
   } else {
     csfContainer.innerHTML = '<p style="color:var(--gray-400);">Sin CSF</p>';
@@ -1672,167 +1788,3 @@ function solicitarPermisoNotificaciones() {
 window.addEventListener('beforeunload', () => {
   if (pollingInterval) clearInterval(pollingInterval);
 });
-// ============================================
-// PANEL LATERAL DETALLE (agregar al final del archivo)
-// ============================================
-let solicitudesCache = [];
-
-// Modificar función cargarHistorial para guardar en caché
-async function cargarHistorial() {
-  if (sesion?.tipo !== 'cliente') return;
-  
-  const container = document.getElementById('historialList');
-  container.innerHTML = '<div class="loader"></div>';
-  
-  try {
-    const result = await apiGet('/api/solicitudes/mis');
-    
-    if (result.success && result.data.length > 0) {
-      solicitudesCache = result.data; // Guardar en caché
-      renderHistorial(result.data);
-    } else {
-      container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No tienes solicitudes</p></div>';
-    }
-  } catch (e) {
-    container.innerHTML = '<div class="empty"><p>Error al cargar</p></div>';
-  }
-}
-
-function renderHistorial(solicitudes) {
-  const container = document.getElementById('historialList');
-  
-  if (solicitudes.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No tienes solicitudes aún</p></div>';
-    return;
-  }
-  
-  container.innerHTML = solicitudes.map(s => `
-    <div class="list-item" onclick="abrirPanelDetalle('${s.id}')">
-      <div class="list-header">
-        <div class="list-title">${s.tienda || 'Tienda'}</div>
-        <div class="list-amount">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</div>
-      </div>
-      <div class="list-details">
-        <strong>RFC:</strong> ${s.rfc}<br>
-        <strong>Razón:</strong> ${s.razon}
-      </div>
-      <div class="list-meta">
-        <span>${formatFecha(s.fecha)}</span>
-        <span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-// Abrir panel de detalle
-function abrirPanelDetalle(solicitudId) {
-  const solicitud = solicitudesCache.find(s => s.id === solicitudId);
-  if (!solicitud) return;
-  
-  // Información General
-  document.getElementById('detallePanelInfo').innerHTML = `
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Tienda</span>
-      <span class="detalle-info-value">${solicitud.tienda || 'N/A'}</span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Fecha</span>
-      <span class="detalle-info-value">${formatFecha(solicitud.fecha)}</span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Estado</span>
-      <span class="detalle-info-value"><span class="badge badge-${getBadgeClass(solicitud.estatus)}">${solicitud.estatus}</span></span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Monto</span>
-      <span class="detalle-info-value" style="color: var(--success-dark); font-weight: 700;">${solicitud.monto ? '$' + parseFloat(solicitud.monto).toLocaleString() : '-'}</span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Folio</span>
-      <span class="detalle-info-value">${solicitud.folio || '-'}</span>
-    </div>
-    ${solicitud.notas ? `
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Notas</span>
-      <span class="detalle-info-value">${solicitud.notas}</span>
-    </div>
-    ` : ''}
-  `;
-  
-  // Datos Fiscales
-  document.getElementById('detallePanelFiscal').innerHTML = `
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">RFC</span>
-      <span class="detalle-info-value">${solicitud.rfc}</span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Razón Social</span>
-      <span class="detalle-info-value">${solicitud.razon}</span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Régimen</span>
-      <span class="detalle-info-value">${solicitud.regimen}</span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">C.P.</span>
-      <span class="detalle-info-value">${solicitud.cp}</span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Uso CFDI</span>
-      <span class="detalle-info-value">${solicitud.uso_cfdi}</span>
-    </div>
-    <div class="detalle-info-row">
-      <span class="detalle-info-label">Email</span>
-      <span class="detalle-info-value">${solicitud.email}</span>
-    </div>
-  `;
-  
-  // Ticket
-  if (solicitud.ticket && solicitud.ticket.length > 50) {
-    document.getElementById('detallePanelTicket').innerHTML = `
-      <img src="${solicitud.ticket}" class="detalle-imagen-preview" onclick="mostrarImagenBase64('${solicitud.ticket}')">
-    `;
-  } else {
-    document.getElementById('detallePanelTicket').innerHTML = `
-      <div class="detalle-no-file">Sin ticket</div>
-    `;
-  }
-  
-  // CSF
-  if (solicitud.csf && solicitud.csf.length > 50) {
-    document.getElementById('detallePanelCSF').innerHTML = `
-      <img src="${solicitud.csf}" class="detalle-imagen-preview" onclick="mostrarImagenBase64('${solicitud.csf}')">
-    `;
-  } else {
-    document.getElementById('detallePanelCSF').innerHTML = `
-      <div class="detalle-no-file">Sin CSF</div>
-    `;
-  }
-  
-  // Mostrar panel
-  document.getElementById('detalleSolicitudPanel').classList.add('show');
-  document.getElementById('view-historial').classList.add('con-panel');
-  
-  // Overlay mobile
-  if (window.innerWidth <= 768) {
-    let overlay = document.querySelector('.panel-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'panel-overlay';
-      overlay.onclick = cerrarPanelDetalle;
-      document.body.appendChild(overlay);
-    }
-    overlay.classList.add('show');
-  }
-}
-
-// Cerrar panel
-function cerrarPanelDetalle() {
-  document.getElementById('detalleSolicitudPanel').classList.remove('show');
-  document.getElementById('view-historial').classList.remove('con-panel');
-  
-  const overlay = document.querySelector('.panel-overlay');
-  if (overlay) {
-    overlay.classList.remove('show');
-  }
-}
