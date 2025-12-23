@@ -1169,10 +1169,9 @@ function renderSolicitudesEmpresa(data) {
     return;
   }
   
-  tbody.innerHTML = data.map(s => {
-    // Fix para imágenes base64
-    const ticketSrc = s.ticket ? (s.ticket.startsWith('data:') ? s.ticket : `data:image/jpeg;base64,${s.ticket}`) : '';
-    const csfSrc = s.csf ? (s.csf.startsWith('data:') ? s.csf : `data:image/jpeg;base64,${s.csf}`) : '';
+  tbody.innerHTML = data.map((s, index) => {
+    const tieneTicket = s.ticket && s.ticket.length > 100;
+    const tieneCsf = s.csf && s.csf.length > 100;
     
     return `
     <tr>
@@ -1180,18 +1179,33 @@ function renderSolicitudesEmpresa(data) {
       <td>${s.razon}</td>
       <td>${s.rfc}</td>
       <td class="tabla-monto">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</td>
-      <td>${ticketSrc ? `<img src="${ticketSrc}" class="tabla-miniatura" onclick="event.stopPropagation(); verImagen('${ticketSrc.replace(/'/g, "\\'")}')">` : '<span class="tabla-no-file">-</span>'}</td>
-      <td>${csfSrc ? `<button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); verImagen('${csfSrc.replace(/'/g, "\\'")}')">📄</button>` : '<span class="tabla-no-file">-</span>'}</td>
+      <td>${tieneTicket ? `<button class="btn btn-sm btn-secondary" onclick="verImagenSolicitud('${s.id}', 'ticket')">📷</button>` : '<span class="tabla-no-file">-</span>'}</td>
+      <td>${tieneCsf ? `<button class="btn btn-sm btn-secondary" onclick="verImagenSolicitud('${s.id}', 'csf')">📄</button>` : '<span class="tabla-no-file">-</span>'}</td>
       <td><span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span></td>
       <td class="tabla-acciones">
         <button class="btn btn-sm btn-primary" onclick="verDetalle('${s.id}')">👁️</button>
         ${s.estatus === 'Pendiente' && sesion.permisos !== 'lectura' ? `
-          <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); cambiarEstatus('${s.id}', 'Facturado')">✓</button>
-          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); cambiarEstatus('${s.id}', 'Rechazado')">✗</button>
+          <button class="btn btn-sm btn-success" onclick="cambiarEstatus('${s.id}', 'Facturado')">✓</button>
+          <button class="btn btn-sm btn-danger" onclick="cambiarEstatus('${s.id}', 'Rechazado')">✗</button>
         ` : ''}
       </td>
     </tr>
   `}).join('');
+}
+function verImagenSolicitud(id, tipo) {
+  const s = solicitudesData.find(x => x.id === id);
+  if (!s) return;
+  
+  let src = tipo === 'ticket' ? s.ticket : s.csf;
+  if (!src) return;
+  
+  // Asegurar que tenga el prefijo correcto
+  if (!src.startsWith('data:')) {
+    src = `data:image/jpeg;base64,${src}`;
+  }
+  
+  document.getElementById('modalImg').src = src;
+  document.getElementById('modalImagen').classList.remove('hidden');
 }
 
 function aplicarFiltros() {
@@ -1237,10 +1251,6 @@ function verDetalle(id) {
   const s = solicitudesData.find(x => x.id === id);
   if (!s) return;
   
-  // Fix para imágenes base64
-  const ticketSrc = s.ticket ? (s.ticket.startsWith('data:') ? s.ticket : `data:image/jpeg;base64,${s.ticket}`) : '';
-  const csfSrc = s.csf ? (s.csf.startsWith('data:') ? s.csf : `data:image/jpeg;base64,${s.csf}`) : '';
-  
   document.getElementById('detalleInfo').innerHTML = `
     <div class="detalle-row"><span class="detalle-label">Razón Social</span><span class="detalle-value">${s.razon}</span></div>
     <div class="detalle-row"><span class="detalle-label">RFC</span><span class="detalle-value">${s.rfc}</span></div>
@@ -1253,13 +1263,23 @@ function verDetalle(id) {
     <div class="detalle-row"><span class="detalle-label">Notas</span><span class="detalle-value">${s.notas || '-'}</span></div>
   `;
   
-  document.getElementById('detalleTicket').innerHTML = ticketSrc 
-    ? `<img src="${ticketSrc}" onclick="verImagen('${ticketSrc.replace(/'/g, "\\'")}')" style="max-width:100%; cursor:pointer; border-radius:8px;">`
-    : '<p style="color:var(--gray-400);">Sin ticket</p>';
+  // Ticket
+  const ticketContainer = document.getElementById('detalleTicket');
+  if (s.ticket && s.ticket.length > 100) {
+    const ticketSrc = s.ticket.startsWith('data:') ? s.ticket : `data:image/jpeg;base64,${s.ticket}`;
+    ticketContainer.innerHTML = `<img src="${ticketSrc}" style="max-width:100%; cursor:pointer; border-radius:8px;" onclick="verImagenSolicitud('${s.id}', 'ticket')">`;
+  } else {
+    ticketContainer.innerHTML = '<p style="color:var(--gray-400);">Sin ticket</p>';
+  }
   
-  document.getElementById('detalleCSF').innerHTML = csfSrc
-    ? `<img src="${csfSrc}" onclick="verImagen('${csfSrc.replace(/'/g, "\\'")}')" style="max-width:200px; cursor:pointer; border-radius:8px;">`
-    : '<p style="color:var(--gray-400);">Sin CSF</p>';
+  // CSF
+  const csfContainer = document.getElementById('detalleCSF');
+  if (s.csf && s.csf.length > 100) {
+    const csfSrc = s.csf.startsWith('data:') ? s.csf : `data:image/jpeg;base64,${s.csf}`;
+    csfContainer.innerHTML = `<img src="${csfSrc}" style="max-width:200px; cursor:pointer; border-radius:8px;" onclick="verImagenSolicitud('${s.id}', 'csf')">`;
+  } else {
+    csfContainer.innerHTML = '<p style="color:var(--gray-400);">Sin CSF</p>';
+  }
   
   document.getElementById('detalleAcciones').innerHTML = s.estatus === 'Pendiente' && sesion.permisos !== 'lectura' ? `
     <button class="btn btn-success" onclick="cambiarEstatus('${s.id}', 'Facturado'); cerrarModalDetalle();">✅ Marcar Facturado</button>
@@ -1450,8 +1470,15 @@ function compartirQR() {
 // ============================================
 // MODALES DE IMAGEN
 // ============================================
-function verImagen(url) {
-  document.getElementById('modalImg').src = url;
+function verImagen(src) {
+  if (!src) return;
+  
+  // Asegurar prefijo correcto
+  if (!src.startsWith('data:') && src.length > 100) {
+    src = `data:image/jpeg;base64,${src}`;
+  }
+  
+  document.getElementById('modalImg').src = src;
   document.getElementById('modalImagen').classList.remove('hidden');
 }
 
