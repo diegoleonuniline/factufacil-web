@@ -1237,19 +1237,129 @@ function mostrarImagenBase64(src) {
   document.getElementById('modalImagen').classList.remove('hidden');
 }
 
-function verImagenSolicitud(id, tipo) {
+function asegurarDataUri(base64, tipo = 'image/jpeg') {
+  if (!base64) return '';
+  if (base64.startsWith('data:')) return base64;
+  return `data:${tipo};base64,${base64}`;
+}
+
+function mostrarImagenBase64(src) {
+  if (!src) return;
+  src = asegurarDataUri(src);
+  document.getElementById('modalImg').src = src;
+  document.getElementById('modalImagen').classList.remove('hidden');
+}
+
+function verTicketSolicitud(id) {
+  const s = solicitudesData.find(x => x.id === id);
+  if (!s || !s.ticket) return;
+  mostrarImagenBase64(s.ticket);
+}
+
+function verCsfSolicitud(id) {
+  const s = solicitudesData.find(x => x.id === id);
+  if (!s || !s.csf) return;
+  mostrarImagenBase64(s.csf);
+}
+
+function verDetalle(id) {
   const s = solicitudesData.find(x => x.id === id);
   if (!s) return;
   
-  let src = tipo === 'ticket' ? s.ticket : s.csf;
-  if (!src) return;
+  document.getElementById('detalleInfo').innerHTML = `
+    <div class="detalle-row"><span class="detalle-label">Razón Social</span><span class="detalle-value">${s.razon}</span></div>
+    <div class="detalle-row"><span class="detalle-label">RFC</span><span class="detalle-value">${s.rfc}</span></div>
+    <div class="detalle-row"><span class="detalle-label">Régimen</span><span class="detalle-value">${s.regimen || '-'}</span></div>
+    <div class="detalle-row"><span class="detalle-label">C.P.</span><span class="detalle-value">${s.cp || '-'}</span></div>
+    <div class="detalle-row"><span class="detalle-label">Uso CFDI</span><span class="detalle-value">${s.uso_cfdi || '-'}</span></div>
+    <div class="detalle-row"><span class="detalle-label">Email</span><span class="detalle-value">${s.email}</span></div>
+    <div class="detalle-row"><span class="detalle-label">Monto</span><span class="detalle-value" style="font-weight:700;color:var(--success);">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</span></div>
+    <div class="detalle-row"><span class="detalle-label">Folio</span><span class="detalle-value">${s.folio || '-'}</span></div>
+    <div class="detalle-row"><span class="detalle-label">Notas</span><span class="detalle-value">${s.notas || '-'}</span></div>
+  `;
   
-  if (!src.startsWith('data:')) {
-    src = `data:image/jpeg;base64,${src}`;
+  const ticketContainer = document.getElementById('detalleTicket');
+  if (s.ticket && s.ticket.length > 100) {
+    const ticketSrc = asegurarDataUri(s.ticket);
+    ticketContainer.innerHTML = `<img src="${ticketSrc}" style="max-width:100%; cursor:pointer; border-radius:8px;" onclick="verTicketSolicitud('${s.id}')">`;
+  } else {
+    ticketContainer.innerHTML = '<p style="color:var(--gray-400);">Sin ticket</p>';
   }
   
-  document.getElementById('modalImg').src = src;
-  document.getElementById('modalImagen').classList.remove('hidden');
+  const csfContainer = document.getElementById('detalleCSF');
+  if (s.csf && s.csf.length > 100) {
+    const csfSrc = asegurarDataUri(s.csf, 'application/pdf');
+    csfContainer.innerHTML = `<img src="${csfSrc}" style="max-width:200px; cursor:pointer; border-radius:8px;" onclick="verCsfSolicitud('${s.id}')">`;
+  } else {
+    csfContainer.innerHTML = '<p style="color:var(--gray-400);">Sin CSF</p>';
+  }
+  
+  document.getElementById('detalleAcciones').innerHTML = s.estatus === 'Pendiente' && sesion.permisos !== 'lectura' ? `
+    <button class="btn btn-success" onclick="cambiarEstatus('${s.id}', 'Facturado'); cerrarModalDetalle();">✅ Facturado</button>
+    <button class="btn btn-danger" onclick="cambiarEstatus('${s.id}', 'Rechazado'); cerrarModalDetalle();">❌ Rechazar</button>
+  ` : `<span class="badge badge-${getBadgeClass(s.estatus)}" style="font-size:14px;padding:10px 20px;">${s.estatus}</span>`;
+  
+  document.getElementById('modalDetalle').classList.remove('hidden');
+}
+
+async function verDetalleSolicitudCliente(uuid) {
+  showLoading('Cargando...');
+  
+  try {
+    const result = await apiGet(`/api/solicitudes/${uuid}`);
+    hideLoading();
+    
+    if (result.success && result.solicitud) {
+      const s = result.solicitud;
+      
+      const ticketHtml = s.ticket ? `<img src="${asegurarDataUri(s.ticket)}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="verImagen('${s.ticket}')">` : '<p>Sin ticket</p>';
+      const csfHtml = s.csf ? `<button class="btn btn-primary" onclick="verImagen('${s.csf}')">Ver CSF</button>` : '<p>Sin CSF</p>';
+      
+      document.getElementById('detalleClienteBody').innerHTML = `
+        <div class="modal-detalle-grid">
+          <div class="modal-detalle-section">
+            <h3>📋 Información General</h3>
+            <div class="detalle-row"><span class="detalle-label">Tienda</span><span class="detalle-value">${s.tienda}</span></div>
+            <div class="detalle-row"><span class="detalle-label">Fecha</span><span class="detalle-value">${formatFecha(s.fecha)}</span></div>
+            <div class="detalle-row"><span class="detalle-label">Estatus</span><span class="detalle-value"><span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span></span></div>
+            <div class="detalle-row"><span class="detalle-label">Monto</span><span class="detalle-value" style="font-weight:700;color:var(--success);">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</span></div>
+            <div class="detalle-row"><span class="detalle-label">Folio</span><span class="detalle-value">${s.folio || '-'}</span></div>
+          </div>
+          <div class="modal-detalle-section">
+            <h3>💳 Datos Fiscales</h3>
+            <div class="detalle-row"><span class="detalle-label">RFC</span><span class="detalle-value">${s.rfc}</span></div>
+            <div class="detalle-row"><span class="detalle-label">Razón Social</span><span class="detalle-value">${s.razon}</span></div>
+            <div class="detalle-row"><span class="detalle-label">Régimen</span><span class="detalle-value">${s.regimen || '-'}</span></div>
+            <div class="detalle-row"><span class="detalle-label">C.P.</span><span class="detalle-value">${s.cp || '-'}</span></div>
+            <div class="detalle-row"><span class="detalle-label">Uso CFDI</span><span class="detalle-value">${s.uso_cfdi || '-'}</span></div>
+            <div class="detalle-row"><span class="detalle-label">Email</span><span class="detalle-value">${s.email}</span></div>
+          </div>
+        </div>
+        ${s.notas ? `<div class="modal-detalle-section"><h3>📝 Notas</h3><p>${s.notas}</p></div>` : ''}
+        <div class="modal-detalle-grid">
+          <div class="modal-detalle-section">
+            <h3>📷 Ticket</h3>
+            ${ticketHtml}
+          </div>
+          <div class="modal-detalle-section">
+            <h3>📄 CSF</h3>
+            ${csfHtml}
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('modalDetalleCliente').classList.remove('hidden');
+    } else {
+      toast('No se pudo cargar el detalle', 'error');
+    }
+  } catch (e) {
+    hideLoading();
+    toast('Error de conexión', 'error');
+  }
+}
+
+function verImagen(src) {
+  mostrarImagenBase64(src);
 }
 
 function aplicarFiltros() {
