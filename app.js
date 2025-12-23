@@ -610,17 +610,8 @@ function toggleMobileMenu() {
   overlay.classList.toggle('hidden');
 }
 
-function cerrarMenuMobile() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-  
-  sidebar.classList.remove('mobile-open');
-  overlay.classList.remove('show');
-  overlay.classList.add('hidden');
-}
-
 // ============================================
-// WIZARD DE SOLICITUD - NUEVA FUNCIONALIDAD
+// WIZARD DE SOLICITUD
 // ============================================
 function resetWizard() {
   currentWizardStep = 1;
@@ -651,9 +642,9 @@ function updateWizardUI() {
   const btnNext = document.getElementById('btnWizardNext');
   const btnSubmit = document.getElementById('btnWizardSubmit');
   
-  btnPrev.style.display = currentWizardStep > 1 ? 'inline-flex' : 'none';
-  btnNext.style.display = currentWizardStep < 4 ? 'inline-flex' : 'none';
-  btnSubmit.style.display = currentWizardStep === 4 ? 'inline-flex' : 'none';
+  if (btnPrev) btnPrev.style.display = currentWizardStep > 1 ? 'inline-flex' : 'none';
+  if (btnNext) btnNext.style.display = currentWizardStep < 4 ? 'inline-flex' : 'none';
+  if (btnSubmit) btnSubmit.style.display = currentWizardStep === 4 ? 'inline-flex' : 'none';
   
   // Si estamos en el paso 4, actualizar resumen
   if (currentWizardStep === 4) {
@@ -733,6 +724,7 @@ function validarPasoActual() {
 }
 
 function validarCampoWizard(input) {
+  if (!input) return;
   if (input.value.trim()) {
     input.classList.remove('invalid');
     input.classList.add('valid');
@@ -745,40 +737,54 @@ function validarCampoWizard(input) {
 function actualizarResumenWizard() {
   // Obtener nombre de la tienda seleccionada
   const empresaSelect = document.getElementById('empresaId');
-  const tiendaNombre = empresaSelect.options[empresaSelect.selectedIndex]?.text || '-';
+  const tiendaNombre = empresaSelect?.options[empresaSelect.selectedIndex]?.text || '-';
   
   // Actualizar resumen
-  document.getElementById('summaryTienda').textContent = tiendaNombre;
-  document.getElementById('summaryRfc').textContent = document.getElementById('solRfc').value || '-';
-  document.getElementById('summaryRazon').textContent = document.getElementById('solRazon').value || '-';
-  document.getElementById('summaryEmail').textContent = document.getElementById('solEmail').value || '-';
+  const summaryTienda = document.getElementById('summaryTienda');
+  const summaryRfc = document.getElementById('summaryRfc');
+  const summaryRazon = document.getElementById('summaryRazon');
+  const summaryEmail = document.getElementById('summaryEmail');
+  const summaryRegimen = document.getElementById('summaryRegimen');
+  const summaryUsoCfdi = document.getElementById('summaryUsoCfdi');
+  const summaryCp = document.getElementById('summaryCp');
+  const summaryMonto = document.getElementById('summaryMonto');
+  
+  if (summaryTienda) summaryTienda.textContent = tiendaNombre;
+  if (summaryRfc) summaryRfc.textContent = document.getElementById('solRfc')?.value || '-';
+  if (summaryRazon) summaryRazon.textContent = document.getElementById('solRazon')?.value || '-';
+  if (summaryEmail) summaryEmail.textContent = document.getElementById('solEmail')?.value || '-';
   
   const regimenSelect = document.getElementById('solRegimen');
-  const regimenTexto = regimenSelect.options[regimenSelect.selectedIndex]?.text || '-';
-  document.getElementById('summaryRegimen').textContent = regimenTexto;
+  const regimenTexto = regimenSelect?.options[regimenSelect.selectedIndex]?.text || '-';
+  if (summaryRegimen) summaryRegimen.textContent = regimenTexto;
   
   const usoCfdiSelect = document.getElementById('solUsoCfdi');
-  const usoCfdiTexto = usoCfdiSelect.options[usoCfdiSelect.selectedIndex]?.text || '-';
-  document.getElementById('summaryUsoCfdi').textContent = usoCfdiTexto;
+  const usoCfdiTexto = usoCfdiSelect?.options[usoCfdiSelect.selectedIndex]?.text || '-';
+  if (summaryUsoCfdi) summaryUsoCfdi.textContent = usoCfdiTexto;
   
-  document.getElementById('summaryCp').textContent = document.getElementById('solCp').value || '-';
+  if (summaryCp) summaryCp.textContent = document.getElementById('solCp')?.value || '-';
   
-  const monto = document.getElementById('solMonto').value;
-  document.getElementById('summaryMonto').textContent = monto ? '$' + parseFloat(monto).toLocaleString() : '-';
+  const monto = document.getElementById('solMonto')?.value;
+  if (summaryMonto) summaryMonto.textContent = monto ? '$' + parseFloat(monto).toLocaleString() : '-';
   
   // Mostrar imágenes si existen
+  const summaryTicketBox = document.getElementById('summaryTicketBox');
+  const summaryTicketImg = document.getElementById('summaryTicketImg');
+  const summaryCsfBox = document.getElementById('summaryCsfBox');
+  const summaryCsfImg = document.getElementById('summaryCsfImg');
+  
   if (ticketBase64) {
-    document.getElementById('summaryTicketBox').style.display = 'block';
-    document.getElementById('summaryTicketImg').src = ticketBase64;
+    if (summaryTicketBox) summaryTicketBox.style.display = 'block';
+    if (summaryTicketImg) summaryTicketImg.src = ticketBase64;
   } else {
-    document.getElementById('summaryTicketBox').style.display = 'none';
+    if (summaryTicketBox) summaryTicketBox.style.display = 'none';
   }
   
   if (csfBase64) {
-    document.getElementById('summaryCsfBox').style.display = 'block';
-    document.getElementById('summaryCsfImg').src = csfBase64;
+    if (summaryCsfBox) summaryCsfBox.style.display = 'block';
+    if (summaryCsfImg) summaryCsfImg.src = csfBase64;
   } else {
-    document.getElementById('summaryCsfBox').style.display = 'none';
+    if (summaryCsfBox) summaryCsfBox.style.display = 'none';
   }
 }
 
