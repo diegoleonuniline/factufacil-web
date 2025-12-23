@@ -29,13 +29,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   
   // Verificar parámetro empresa en URL
-// Verificar parámetro empresa en URL
-const params = new URLSearchParams(window.location.search);
-const empresaParam = params.get('empresa');
-if (empresaParam) {
-  // Guardar para usar después de login/invitado
-  sessionStorage.setItem('empresaPreseleccionada', empresaParam);
-}
+  const params = new URLSearchParams(window.location.search);
+  const empresaParam = params.get('empresa');
+  if (empresaParam) {
+    sessionStorage.setItem('empresaPreseleccionada', empresaParam);
+  }
+});
 
 // ============================================
 // EVENT LISTENERS
@@ -405,18 +404,18 @@ function mostrarPanelInvitado() {
   
   // Ocultar selector de razón social
   document.getElementById('selectorRazon')?.classList.add('hidden');
-
-// Preseleccionar empresa si viene de QR
-setTimeout(() => {
-  const empresaPre = sessionStorage.getItem('empresaPreseleccionada');
-  if (empresaPre) {
-    const select = document.getElementById('empresaId');
-    if (select) {
-      select.value = empresaPre;
-      sessionStorage.removeItem('empresaPreseleccionada');
+  
+  // Preseleccionar empresa si viene de QR
+  setTimeout(() => {
+    const empresaPre = sessionStorage.getItem('empresaPreseleccionada');
+    if (empresaPre) {
+      const select = document.getElementById('empresaId');
+      if (select) {
+        select.value = empresaPre;
+        sessionStorage.removeItem('empresaPreseleccionada');
+      }
     }
-  }
-}, 300);
+  }, 300);
   
   // Ir a solicitar
   navegarA('solicitar');
@@ -456,19 +455,20 @@ function mostrarPanelCliente() {
   document.getElementById('selectorRazon')?.classList.remove('hidden');
   cargarSelectorRazones();
   cargarListaRazones();
-
+  
   // Preseleccionar empresa si viene de QR
-setTimeout(() => {
-  const empresaPre = sessionStorage.getItem('empresaPreseleccionada');
-  if (empresaPre) {
-    const select = document.getElementById('empresaId');
-    if (select) {
-      select.value = empresaPre;
-      sessionStorage.removeItem('empresaPreseleccionada');
+  setTimeout(() => {
+    const empresaPre = sessionStorage.getItem('empresaPreseleccionada');
+    if (empresaPre) {
+      const select = document.getElementById('empresaId');
+      if (select) {
+        select.value = empresaPre;
+        sessionStorage.removeItem('empresaPreseleccionada');
+      }
+      navegarA('solicitar');
+      return;
     }
-    navegarA('solicitar');
-  }
-}, 300);
+  }, 300);
   
   // Cargar dashboard
   cargarDashboard();
@@ -1409,7 +1409,8 @@ async function eliminarUsuario(id) {
 // ============================================
 function generarQREmpresa() {
   const alias = sesion.empresaAlias || sesion.empresaId;
-  const url = `${window.location.origin}${window.location.pathname}?empresa=${alias}`;
+  const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '');
+  const url = `${baseUrl}?empresa=${alias}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}&bgcolor=ffffff&color=1e293b`;
   
   document.getElementById('qrEmpresaImage').src = qrUrl;
@@ -1418,7 +1419,8 @@ function generarQREmpresa() {
 
 function compartirQR() {
   const alias = sesion.empresaAlias || sesion.empresaId;
-  const url = `${window.location.origin}${window.location.pathname}?empresa=${alias}`;
+  const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '');
+  const url = `${baseUrl}?empresa=${alias}`;
   
   if (navigator.share) {
     navigator.share({
