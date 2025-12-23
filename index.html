@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FacturaFácil - Portal de Facturación</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  
+  <!-- OVERLAY DE CARGA -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p id="loadingText">Procesando...</p>
+    </div>
+  </div>
+
+  <!-- MODAL IMAGEN -->
+  <div id="modalImagen" class="modal hidden" onclick="cerrarModal()">
+    <button class="modal-close">✕</button>
+    <div class="modal-content">
+      <img id="modalImg" src="">
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE SOLICITUD -->
+  <div id="modalDetalle" class="modal hidden">
+    <div class="modal-detalle-content">
+      <button class="modal-close" onclick="cerrarModalDetalle()">✕</button>
+      <h2 class="modal-detalle-title">Detalle de Solicitud</h2>
+      
+      <div class="modal-detalle-grid">
+        <div class="modal-detalle-section">
+          <h3>📋 Información</h3>
+          <div id="detalleInfo" class="detalle-info"></div>
+        </div>
+        
+        <div class="modal-detalle-section detalle-imagen">
+          <h3>📷 Ticket</h3>
+          <div id="detalleTicket"></div>
+        </div>
+      </div>
+      
+      <div class="modal-detalle-section detalle-csf">
+        <h3>📄 CSF</h3>
+        <div id="detalleCSF"></div>
+      </div>
+      
+      <div class="modal-detalle-actions" id="detalleAcciones"></div>
+    </div>
+  </div>
+
+  <!-- MODAL CREAR/EDITAR USUARIO EMPRESA -->
+  <div id="modalUsuario" class="modal hidden">
+    <div class="modal-form-content">
+      <button class="modal-close" onclick="cerrarModalUsuario()">✕</button>
+      <h2 class="modal-detalle-title" id="modalUsuarioTitulo">Nuevo Usuario</h2>
+      
+      <form onsubmit="event.preventDefault(); guardarUsuarioEmpresa();">
+        <input type="hidden" id="usuarioEditId">
+        
+        <div class="form-group-compact">
+          <label>Usuario de Acceso *</label>
+          <input type="text" id="usuarioNombreAcceso" class="input" placeholder="usuario123" required>
+        </div>
+
+        <div class="form-group-compact">
+          <label>Nombre Completo *</label>
+          <input type="text" id="usuarioNombreCompleto" class="input" placeholder="Juan Pérez" required>
+        </div>
+
+        <div class="form-group-compact">
+          <label>Email</label>
+          <input type="email" id="usuarioEmail" class="input" placeholder="usuario@correo.com">
+        </div>
+
+        <div class="form-group-compact">
+          <label>Contraseña *</label>
+          <input type="password" id="usuarioPassword" class="input" placeholder="••••••••" required>
+          <small style="color: var(--gray-500); font-size: 12px;">Al editar, dejar vacío para mantener contraseña actual</small>
+        </div>
+
+        <div class="form-group-compact">
+          <label>Permisos *</label>
+          <select id="usuarioPermisos" class="input" required>
+            <option value="lectura">Solo Ver</option>
+            <option value="gestionar">Gestionar</option>
+          </select>
+        </div>
+
+        <div class="form-group-compact">
+          <label>Administrador *</label>
+          <select id="usuarioAdmin" class="input" required>
+            <option value="No">No</option>
+            <option value="Si">Sí</option>
+          </select>
+        </div>
+
+        <div class="form-group-compact">
+          <label>Estado *</label>
+          <select id="usuarioEstado" class="input" required>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+
+        <div class="modal-form-actions">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalUsuario()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Usuario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
+  <!-- APP CONTAINER -->
+  <div class="app-container">
+    
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar hidden">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">🧾</div>
+          <div>
+            <div class="logo-title">FacturaFácil</div>
+            <div class="logo-subtitle">Portal de Facturación</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">U</div>
+        <div>
+          <div class="sidebar-user-name" id="sidebarUserName">Usuario</div>
+          <div class="sidebar-user-type" id="sidebarUserType">Cliente</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebarNav">
+        <button class="nav-item active" data-view="solicitar">
+          <span class="nav-icon">📝</span>
+          Nueva Solicitud
+        </button>
+        <button class="nav-item" data-view="historial">
+          <span class="nav-icon">📋</span>
+          Mis Solicitudes
+        </button>
+        <button class="nav-item" data-view="perfil">
+          <span class="nav-icon">👤</span>
+          Mi Perfil
+        </button>
+      </nav>
+
+      <nav class="sidebar-nav" id="sidebarNavEmpresa" style="display:none;">
+        <button class="nav-item active" data-view="solicitudes-empresa">
+          <span class="nav-icon">📋</span>
+          Solicitudes
+        </button>
+        <button class="nav-item" data-view="usuarios-empresa">
+          <span class="nav-icon">👥</span>
+          Usuarios
+        </button>
+        <button class="nav-item" data-view="qr-empresa">
+          <span class="nav-icon">📱</span>
+          Mi QR
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-logout-sidebar" onclick="logout()">
+          <span>🚪</span>
+          Cerrar Sesión
+        </button>
+      </div>
+    </aside>
+
+    <!-- MOBILE HEADER -->
+    <header id="mobileHeader" class="mobile-header hidden">
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+      <div class="mobile-header-title">FacturaFácil</div>
+      <button class="mobile-logout-btn" onclick="logout()">🚪</button>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- LOGIN SECTION -->
+      <section id="loginSection" class="login-wrapper">
+        
+        <!-- HERO BANNER -->
+        <div class="hero-banner">
+          <div class="hero-banner-content">
+            <div class="hero-banner-icon">🧾</div>
+            <h1 class="hero-banner-title">Solicita tu factura en segundos</h1>
+            <p class="hero-banner-subtitle">Sin complicaciones, sin papeles, 100% digital</p>
+            <div class="hero-banner-features">
+              <div class="hero-banner-feature">
+                <span>⚡</span>
+                <span>Rápido</span>
+              </div>
+              <div class="hero-banner-feature">
+                <span>📱</span>
+                <span>Desde tu celular</span>
+              </div>
+              <div class="hero-banner-feature">
+                <span>✅</span>
+                <span>100% seguro</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AUTH CONTAINER -->
+        <div class="auth-container-new">
+          <div class="auth-card">
+            <div class="auth-header">
+              <h1>Comienza ahora</h1>
+              <p>Elige cómo deseas continuar</p>
+            </div>
+
+            <div class="tipo-toggle-triple">
+              <button id="btnTipoInvitado" class="tipo-btn active" onclick="selectTipoLogin('invitado')">
+                <span>👤</span>
+                Invitado
+              </button>
+              <button id="btnTipoCliente" class="tipo-btn" onclick="selectTipoLogin('cliente')">
+                <span>👨‍💼</span>
+                Cliente
+              </button>
+              <button id="btnTipoEmpresa" class="tipo-btn" onclick="selectTipoLogin('empresa')">
+                <span>🏢</span>
+                Empresa
+              </button>
+            </div>
+
+            <div id="invitadoInfo">
+              <p style="text-align: center; color: var(--gray-600); margin-bottom: 20px;">
+                Continúa sin cuenta para hacer tu solicitud
+              </p>
+              <button class="btn btn-primary btn-block btn-lg" onclick="continuarInvitado()">
+                Continuar como Invitado
+              </button>
+            </div>
+
+            <div id="loginFormContainer" class="hidden">
+              <form onsubmit="event.preventDefault(); login();">
+                <div class="form-group">
+                  <label id="labelLoginUser">Correo electrónico</label>
+                  <input type="text" id="loginUser" class="input" placeholder="tu@correo.com" required>
+                </div>
+
+                <div class="form-group">
+                  <label>Contraseña</label>
+                  <input type="password" id="loginPass" class="input" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" id="btnLogin" class="btn btn-primary btn-block btn-lg">
+                  Iniciar Sesión
+                </button>
+              </form>
+
+              <p id="linkRegistro" class="text-center mt-3">
+                ¿No tienes cuenta? <a href="#" onclick="event.preventDefault(); showRegistro();">Regístrate</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REGISTRO SECTION -->
+      <section id="registroSection" class="hidden">
+        <div class="auth-container">
+          <div class="auth-card">
+            <button class="btn-back" onclick="showLogin()">←</button>
+            
+            <div class="auth-header">
+              <div class="auth-logo">📝</div>
+              <h1>Crear Cuenta</h1>
+              <p>Regístrate para gestionar tus facturas</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); registrar();">
+              <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="regNombre" class="input" placeholder="Juan Pérez" required>
+              </div>
+
+              <div class="form-group">
+                <label>Correo Electrónico *</label>
+                <input type="email" id="regEmail" class="input" placeholder="tu@correo.com" required>
+              </div>
+
+              <div class="form-group">
+                <label>Contraseña *</label>
+                <input type="password" id="regPass" class="input" placeholder="••••••••" required>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>RFC *</label>
+                  <input type="text" id="regRfc" class="input input-upper" placeholder="XAXX010101000" maxlength="13" required>
+                </div>
+
+                <div class="form-group">
+                  <label>C.P. *</label>
+                  <input type="text" id="regCp" class="input" placeholder="44100" maxlength="5" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Razón Social *</label>
+                <input type="text" id="regRazon" class="input" placeholder="Mi Empresa SA de CV" required>
+              </div>
+
+              <div class="form-group">
+                <label>Régimen Fiscal *</label>
+                <select id="regRegimen" class="input" required>
+                  <option value="">Selecciona...</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Uso de CFDI *</label>
+                <select id="regUsoCfdi" class="input" required>
+                  <option value="">Selecciona...</option>
+                </select>
+              </div>
+
+              <button type="submit" id="btnRegistro" class="btn btn-success btn-block btn-lg">
+                Crear Cuenta
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL CLIENTE -->
+      <div id="panelCliente" class="hidden">
+        
+        <!-- SOLICITAR -->
+        <div id="view-solicitar" class="content-view active">
+          <div class="page-header-compact">
+            <h1 class="page-title-compact">📝 Nueva Solicitud</h1>
+          </div>
+
+          <!-- SELECCIÓN DE TIENDA -->
+          <div class="card-compact">
+            <div class="card-header-compact">
+              <span class="card-icon">🏪</span>
+              <span class="card-title-text">Tienda</span>
+            </div>
+            <select id="empresaId" class="input" required>
+              <option value="">Selecciona una tienda...</option>
+            </select>
+          </div>
+
+          <div class="content-grid">
+            <!-- DATOS FISCALES -->
+            <div class="card-compact">
+              <div class="card-header-compact">
+                <span class="card-icon">💳</span>
+                <span class="card-title-text">Datos Fiscales</span>
+              </div>
+
+              <div class="form-group-compact">
+                <label>RFC *</label>
+                <div style="position: relative;">
+                  <input type="text" id="solRfc" class="input input-upper" placeholder="XAXX010101000" maxlength="13" required oninput="buscarDatosPorRFC(this.value)">
+                  <div id="rfcLoader" class="rfc-loader hidden">
+                    <div class="rfc-spinner"></div>
+                  </div>
+                </div>
+                <div id="rfcStatus" class="rfc-status hidden"></div>
+              </div>
+
+              <div class="form-group-compact">
+                <label>Razón Social *</label>
+                <input type="text" id="solRazon" class="input" placeholder="Mi Empresa SA de CV" required>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group-compact">
+                  <label>Régimen *</label>
+                  <select id="solRegimen" class="input" required>
+                    <option value="">Selecciona...</option>
+                  </select>
+                </div>
+
+                <div class="form-group-compact">
+                  <label>C.P. *</label>
+                  <input type="text" id="solCp" class="input" placeholder="44100" maxlength="5" required>
+                </div>
+              </div>
+
+              <div class="form-group-compact">
+                <label>Uso CFDI *</label>
+                <select id="solUsoCfdi" class="input" required>
+                  <option value="">Selecciona...</option>
+                </select>
+              </div>
+
+              <div class="form-group-compact">
+                <label>Email *</label>
+                <input type="email" id="solEmail" class="input" placeholder="tu@correo.com" required>
+              </div>
+
+              <div class="form-group-compact">
+                <label>CC</label>
+                <input type="email" id="solCC" class="input" placeholder="copia@correo.com">
+              </div>
+            </div>
+
+            <!-- DATOS DE COMPRA -->
+            <div class="card-compact">
+              <div class="card-header-compact">
+                <span class="card-icon">🧾</span>
+                <span class="card-title-text">Datos de Compra</span>
+              </div>
+
+              <div class="form-group-compact">
+                <label>Monto Total</label>
+                <input type="number" id="solMonto" class="input" placeholder="1000.00" step="0.01">
+              </div>
+
+              <div class="form-group-compact">
+                <label>Folio</label>
+                <input type="text" id="solFolio" class="input" placeholder="ABC123">
+              </div>
+
+              <div class="form-group-compact">
+                <label>Notas</label>
+                <textarea id="solNotas" class="input" placeholder="Información adicional..." rows="3"></textarea>
+              </div>
+
+              <div class="form-group-compact">
+                <label>📷 Ticket *</label>
+                <div class="file-box-compact" onclick="document.getElementById('ticketFile').click()">
+                  <input type="file" id="ticketFile" accept="image/*" onchange="previewTicket(this)" style="display:none">
+                  <div id="ticketUploadText" class="file-placeholder-compact">
+                    <span>📷 Subir ticket</span>
+                  </div>
+                  <img id="ticketPreview" class="file-preview-compact hidden" alt="Preview">
+                </div>
+              </div>
+
+              <div class="form-group-compact">
+                <label>📄 CSF</label>
+                <div class="file-box-compact" onclick="document.getElementById('csfFile').click()">
+                  <input type="file" id="csfFile" accept="image/*,application/pdf" onchange="previewCSF(this)" style="display:none">
+                  <div id="csfUploadText" class="file-placeholder-compact">
+                    <span>📄 Subir CSF</span>
+                  </div>
+                  <div id="csfPreview" class="file-preview-name-compact hidden"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button id="btnEnviar" class="btn btn-success btn-block" onclick="enviarSolicitud()">
+            ✅ Enviar Solicitud
+          </button>
+        </div>
+
+        <!-- HISTORIAL -->
+        <div id="view-historial" class="content-view">
+          <div class="page-header-compact">
+            <h1 class="page-title-compact">📋 Mis Solicitudes</h1>
+          </div>
+          <div class="card-compact">
+            <div id="historialList"></div>
+          </div>
+        </div>
+
+        <!-- PERFIL -->
+        <div id="view-perfil" class="content-view">
+          <div class="page-header-compact">
+            <h1 class="page-title-compact">👤 Mi Perfil</h1>
+          </div>
+
+          <div class="card-compact">
+            <div class="card-header-compact">
+              <span class="card-icon">👤</span>
+              <span class="card-title-text">Información Personal</span>
+            </div>
+
+            <div class="form-group-compact">
+              <label>Nombre</label>
+              <input type="text" id="perfilNombre" class="input" placeholder="Tu nombre">
+            </div>
+
+            <div class="form-group-compact">
+              <label>Email</label>
+              <input type="email" id="perfilEmail" class="input" disabled>
+            </div>
+
+            <div class="form-group-compact">
+              <label>Nueva Contraseña</label>
+              <input type="password" id="perfilPass" class="input" placeholder="Dejar vacío para no cambiar">
+            </div>
+          </div>
+
+          <div class="card-compact">
+            <div class="card-header-compact">
+              <span class="card-icon">💳</span>
+              <span class="card-title-text">Datos Fiscales</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group-compact">
+                <label>RFC *</label>
+                <input type="text" id="perfilRfc" class="input input-upper" maxlength="13" required>
+              </div>
+
+              <div class="form-group-compact">
+                <label>C.P. *</label>
+                <input type="text" id="perfilCp" class="input" maxlength="5" required>
+              </div>
+            </div>
+
+            <div class="form-group-compact">
+              <label>Razón Social *</label>
+              <input type="text" id="perfilRazon" class="input" required>
+            </div>
+
+            <div class="form-group-compact">
+              <label>Régimen Fiscal *</label>
+              <select id="perfilRegimen" class="input" required>
+                <option value="">Selecciona...</option>
+              </select>
+            </div>
+
+            <div class="form-group-compact">
+              <label>Uso de CFDI *</label>
+              <select id="perfilUsoCfdi" class="input" required>
+                <option value="">Selecciona...</option>
+              </select>
+            </div>
+
+            <button id="btnActualizarPerfil" class="btn btn-primary" onclick="actualizarPerfil()">
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL EMPRESA -->
+      <div id="panelEmpresa" class="hidden">
+        
+        <!-- SOLICITUDES EMPRESA -->
+        <div id="view-solicitudes-empresa" class="content-view active">
+          <div class="page-header-compact">
+            <h1 class="page-title-compact">📋 <span id="empresaNombre"></span></h1>
+          </div>
+
+          <div class="card-compact filter-card">
+            <div class="card-header-compact">
+              <span class="card-icon">🔍</span>
+              <span class="card-title-text">Filtros</span>
+            </div>
+            <div class="filter-row">
+              <div class="form-group-compact">
+                <label>Estado</label>
+                <select id="filtroEstado" class="input" onchange="aplicarFiltros()">
+                  <option value="">Todos</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Facturado">Facturado</option>
+                  <option value="Rechazado">Rechazado</option>
+                </select>
+              </div>
+
+              <div class="form-group-compact">
+                <label>Desde</label>
+                <input type="date" id="filtroDesde" class="input" onchange="aplicarFiltros()">
+              </div>
+
+              <div class="form-group-compact">
+                <label>Hasta</label>
+                <input type="date" id="filtroHasta" class="input" onchange="aplicarFiltros()">
+              </div>
+
+              <div class="form-group-compact">
+                <label>Buscar</label>
+                <input type="text" id="filtroBuscar" class="input" placeholder="RFC, Email..." oninput="aplicarFiltros()">
+              </div>
+            </div>
+          </div>
+
+          <div class="card-compact">
+            <div class="table-container">
+              <table class="tabla-solicitudes">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>RFC</th>
+                    <th>Monto</th>
+                    <th>Ticket</th>
+                    <th>CSF</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="solicitudesEmpresa">
+                  <tr><td colspan="8"><div class="loader"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- USUARIOS EMPRESA -->
+        <div id="view-usuarios-empresa" class="content-view">
+          <div class="page-header-compact">
+            <h1 class="page-title-compact">👥 Usuarios</h1>
+            <button class="btn btn-primary" onclick="abrirModalNuevoUsuario()">
+              ➕ Nuevo Usuario
+            </button>
+          </div>
+
+          <div class="card-compact">
+            <div class="table-container">
+              <table class="tabla-usuarios">
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Permisos</th>
+                    <th>Admin</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="usuariosEmpresa">
+                  <tr><td colspan="7"><div class="loader"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR EMPRESA -->
+        <div id="view-qr-empresa" class="content-view">
+          <div class="page-header-compact">
+            <h1 class="page-title-compact">📱 Mi Código QR</h1>
+          </div>
+
+          <div class="card-compact" style="text-align: center;">
+            <h3 style="margin-bottom: 16px; font-size: 18px; color: var(--gray-900);">Código QR para Solicitar Facturas</h3>
+            <p style="color: var(--gray-600); margin-bottom: 24px; font-size: 14px;">
+              Tus clientes pueden escanear este código
+            </p>
+            <img id="qrEmpresaImage" src="" alt="QR Code" style="max-width: 350px; width: 100%; margin: 0 auto 24px; border-radius: 12px; box-shadow: var(--shadow-lg);">
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+              <a id="qrEmpresaDownload" href="" download="qr-facturacion.png" class="btn btn-primary">
+                📥 Descargar QR
+              </a>
+              <button class="btn btn-success" onclick="compartirQR()">
+                📤 Compartir
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <nav id="bottomNav" class="bottom-nav hidden">
+      <button class="bottom-nav-item active" data-view="solicitar" onclick="handleBottomNav(this)">
+        <span class="bottom-nav-icon">📝</span>
+        <span class="bottom-nav-label">Solicitar</span>
+      </button>
+      <button class="bottom-nav-item" data-view="historial" onclick="handleBottomNav(this)">
+        <span class="bottom-nav-icon">📋</span>
+        <span class="bottom-nav-label">Historial</span>
+      </button>
+      <button class="bottom-nav-item" data-view="perfil" onclick="handleBottomNav(this)">
+        <span class="bottom-nav-icon">👤</span>
+        <span class="bottom-nav-label">Perfil</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
