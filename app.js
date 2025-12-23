@@ -4,6 +4,12 @@
 const API_URL = 'https://factufacil-3a5827bb6dca.herokuapp.com';
 
 // ============================================
+// CONFIGURACIÓN CLOUDINARY
+// ============================================
+const CLOUDINARY_CLOUD_NAME = 'dnodzj8fz';
+const CLOUDINARY_UPLOAD_PRESET = 'factufacil'; // ⬅️ NECESITAS CREAR ESTE PRESET
+
+// ============================================
 // VARIABLES GLOBALES
 // ============================================
 let tipoLogin = 'invitado';
@@ -181,6 +187,36 @@ async function apiDelete(endpoint) {
     return res.json();
   } catch (error) {
     console.error('API Error:', error);
+    return { success: false, mensaje: 'Error de conexión' };
+  }
+}
+
+// ============================================
+// CLOUDINARY
+// ============================================
+async function subirImagenCloudinary(file) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: 'POST',
+        body: formData
+      }
+    );
+    
+    const data = await response.json();
+    
+    if (data.secure_url) {
+      return { success: true, url: data.secure_url };
+    } else {
+      return { success: false, mensaje: 'Error al subir imagen' };
+    }
+  } catch (error) {
+    console.error('Error Cloudinary:', error);
     return { success: false, mensaje: 'Error de conexión' };
   }
 }
@@ -872,75 +908,111 @@ function buscarDatosPorRFC(rfc) {
 }
 
 // ============================================
-// ARCHIVOS
+// ARCHIVOS CON CLOUDINARY
 // ============================================
-function previewTicket(input) {
+async function previewTicket(input) {
   if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      ticketBase64 = e.target.result;
-      document.getElementById('ticketPreview').src = ticketBase64;
+    showLoading('Subiendo imagen...');
+    
+    const result = await subirImagenCloudinary(input.files[0]);
+    
+    hideLoading();
+    
+    if (result.success) {
+      ticketBase64 = result.url;
+      document.getElementById('ticketPreview').src = result.url;
       document.getElementById('ticketPreview').classList.remove('hidden');
       document.getElementById('ticketUploadText').classList.add('hidden');
-    };
-    reader.readAsDataURL(input.files[0]);
+      toast('Imagen subida', 'success');
+    } else {
+      toast(result.mensaje || 'Error al subir', 'error');
+      input.value = '';
+    }
   }
 }
 
-function previewCSF(input) {
+async function previewCSF(input) {
   if (input.files && input.files[0]) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      csfBase64 = e.target.result;
-      document.getElementById('csfPreview').textContent = '✅ ' + file.name;
+    showLoading('Subiendo CSF...');
+    
+    const result = await subirImagenCloudinary(input.files[0]);
+    
+    hideLoading();
+    
+    if (result.success) {
+      csfBase64 = result.url;
+      document.getElementById('csfPreview').textContent = '✅ ' + input.files[0].name;
       document.getElementById('csfPreview').classList.remove('hidden');
       document.getElementById('csfUploadText').classList.add('hidden');
       document.getElementById('csfFromRazon')?.classList.add('hidden');
-    };
-    reader.readAsDataURL(file);
+      toast('CSF subida', 'success');
+    } else {
+      toast(result.mensaje || 'Error al subir', 'error');
+      input.value = '';
+    }
   }
 }
 
-function previewRegCSF(input) {
+async function previewRegCSF(input) {
   if (input.files && input.files[0]) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      regCsfBase64 = e.target.result;
-      document.getElementById('regCsfText').textContent = '✅ ' + file.name;
-    };
-    reader.readAsDataURL(file);
+    showLoading('Subiendo CSF...');
+    
+    const result = await subirImagenCloudinary(input.files[0]);
+    
+    hideLoading();
+    
+    if (result.success) {
+      regCsfBase64 = result.url;
+      document.getElementById('regCsfText').textContent = '✅ ' + input.files[0].name;
+      toast('CSF subida', 'success');
+    } else {
+      toast(result.mensaje || 'Error al subir', 'error');
+      input.value = '';
+    }
   }
 }
 
-function previewRazonCSF(input) {
+async function previewRazonCSF(input) {
   if (input.files && input.files[0]) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      razonCsfBase64 = e.target.result;
-      document.getElementById('razonCsfText').textContent = '✅ ' + file.name;
-    };
-    reader.readAsDataURL(file);
+    showLoading('Subiendo CSF...');
+    
+    const result = await subirImagenCloudinary(input.files[0]);
+    
+    hideLoading();
+    
+    if (result.success) {
+      razonCsfBase64 = result.url;
+      document.getElementById('razonCsfText').textContent = '✅ ' + input.files[0].name;
+      toast('CSF subida', 'success');
+    } else {
+      toast(result.mensaje || 'Error al subir', 'error');
+      input.value = '';
+    }
   }
 }
 
-function previewPerfilCSF(input) {
+async function previewPerfilCSF(input) {
   if (input.files && input.files[0]) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      perfilCsfBase64 = e.target.result;
-      document.getElementById('perfilCsfText').textContent = '✅ ' + file.name;
-    };
-    reader.readAsDataURL(file);
+    showLoading('Subiendo CSF...');
+    
+    const result = await subirImagenCloudinary(input.files[0]);
+    
+    hideLoading();
+    
+    if (result.success) {
+      perfilCsfBase64 = result.url;
+      document.getElementById('perfilCsfText').textContent = '✅ ' + input.files[0].name;
+      toast('CSF subida', 'success');
+    } else {
+      toast(result.mensaje || 'Error al subir', 'error');
+      input.value = '';
+    }
   }
 }
 
 function verCSFPerfil() {
   if (perfilCsfBase64 || sesion?.usuario?.csf) {
-    verImagen(perfilCsfBase64 || sesion.usuario.csf);
+    mostrarImagenBase64(perfilCsfBase64 || sesion.usuario.csf);
   }
 }
 
@@ -1076,6 +1148,9 @@ async function verDetalleSolicitudCliente(uuid) {
     if (result.success && result.solicitud) {
       const s = result.solicitud;
       
+      const ticketHtml = s.ticket ? `<img src="${s.ticket}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="mostrarImagenBase64('${s.ticket}')">` : '<p>Sin ticket</p>';
+      const csfHtml = s.csf ? `<button class="btn btn-primary" onclick="mostrarImagenBase64('${s.csf}')">Ver CSF</button>` : '<p>Sin CSF</p>';
+      
       document.getElementById('detalleClienteBody').innerHTML = `
         <div class="modal-detalle-grid">
           <div class="modal-detalle-section">
@@ -1100,11 +1175,11 @@ async function verDetalleSolicitudCliente(uuid) {
         <div class="modal-detalle-grid">
           <div class="modal-detalle-section">
             <h3>📷 Ticket</h3>
-            ${s.ticket ? `<img src="${s.ticket}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="verImagen('${s.ticket}')">` : '<p>Sin ticket</p>'}
+            ${ticketHtml}
           </div>
           <div class="modal-detalle-section">
             <h3>📄 CSF</h3>
-            ${s.csf ? `<button class="btn btn-primary" onclick="verImagen('${s.csf}')">Ver CSF</button>` : '<p>Sin CSF</p>'}
+            ${csfHtml}
           </div>
         </div>
       `;
@@ -1191,8 +1266,8 @@ function renderSolicitudesEmpresa(data) {
   }
   
   tbody.innerHTML = data.map(s => {
-    const tieneTicket = s.ticket && s.ticket.length > 100;
-    const tieneCsf = s.csf && s.csf.length > 100;
+    const tieneTicket = s.ticket && s.ticket.length > 50;
+    const tieneCsf = s.csf && s.csf.length > 50;
     
     return `
     <tr>
@@ -1228,38 +1303,8 @@ function verCsfSolicitud(id) {
 
 function mostrarImagenBase64(src) {
   if (!src) return;
-  
-  if (!src.startsWith('data:')) {
-    src = 'data:image/jpeg;base64,' + src;
-  }
-  
   document.getElementById('modalImg').src = src;
   document.getElementById('modalImagen').classList.remove('hidden');
-}
-
-function asegurarDataUri(base64, tipo = 'image/jpeg') {
-  if (!base64) return '';
-  if (base64.startsWith('data:')) return base64;
-  return `data:${tipo};base64,${base64}`;
-}
-
-function mostrarImagenBase64(src) {
-  if (!src) return;
-  src = asegurarDataUri(src);
-  document.getElementById('modalImg').src = src;
-  document.getElementById('modalImagen').classList.remove('hidden');
-}
-
-function verTicketSolicitud(id) {
-  const s = solicitudesData.find(x => x.id === id);
-  if (!s || !s.ticket) return;
-  mostrarImagenBase64(s.ticket);
-}
-
-function verCsfSolicitud(id) {
-  const s = solicitudesData.find(x => x.id === id);
-  if (!s || !s.csf) return;
-  mostrarImagenBase64(s.csf);
 }
 
 function verDetalle(id) {
@@ -1279,17 +1324,15 @@ function verDetalle(id) {
   `;
   
   const ticketContainer = document.getElementById('detalleTicket');
-  if (s.ticket && s.ticket.length > 100) {
-    const ticketSrc = asegurarDataUri(s.ticket);
-    ticketContainer.innerHTML = `<img src="${ticketSrc}" style="max-width:100%; cursor:pointer; border-radius:8px;" onclick="verTicketSolicitud('${s.id}')">`;
+  if (s.ticket) {
+    ticketContainer.innerHTML = `<img src="${s.ticket}" style="max-width:100%; cursor:pointer; border-radius:8px;" onclick="verTicketSolicitud('${s.id}')">`;
   } else {
     ticketContainer.innerHTML = '<p style="color:var(--gray-400);">Sin ticket</p>';
   }
   
   const csfContainer = document.getElementById('detalleCSF');
-  if (s.csf && s.csf.length > 100) {
-    const csfSrc = asegurarDataUri(s.csf, 'application/pdf');
-    csfContainer.innerHTML = `<img src="${csfSrc}" style="max-width:200px; cursor:pointer; border-radius:8px;" onclick="verCsfSolicitud('${s.id}')">`;
+  if (s.csf) {
+    csfContainer.innerHTML = `<img src="${s.csf}" style="max-width:200px; cursor:pointer; border-radius:8px;" onclick="verCsfSolicitud('${s.id}')">`;
   } else {
     csfContainer.innerHTML = '<p style="color:var(--gray-400);">Sin CSF</p>';
   }
@@ -1300,66 +1343,6 @@ function verDetalle(id) {
   ` : `<span class="badge badge-${getBadgeClass(s.estatus)}" style="font-size:14px;padding:10px 20px;">${s.estatus}</span>`;
   
   document.getElementById('modalDetalle').classList.remove('hidden');
-}
-
-async function verDetalleSolicitudCliente(uuid) {
-  showLoading('Cargando...');
-  
-  try {
-    const result = await apiGet(`/api/solicitudes/${uuid}`);
-    hideLoading();
-    
-    if (result.success && result.solicitud) {
-      const s = result.solicitud;
-      
-      const ticketHtml = s.ticket ? `<img src="${asegurarDataUri(s.ticket)}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="verImagen('${s.ticket}')">` : '<p>Sin ticket</p>';
-      const csfHtml = s.csf ? `<button class="btn btn-primary" onclick="verImagen('${s.csf}')">Ver CSF</button>` : '<p>Sin CSF</p>';
-      
-      document.getElementById('detalleClienteBody').innerHTML = `
-        <div class="modal-detalle-grid">
-          <div class="modal-detalle-section">
-            <h3>📋 Información General</h3>
-            <div class="detalle-row"><span class="detalle-label">Tienda</span><span class="detalle-value">${s.tienda}</span></div>
-            <div class="detalle-row"><span class="detalle-label">Fecha</span><span class="detalle-value">${formatFecha(s.fecha)}</span></div>
-            <div class="detalle-row"><span class="detalle-label">Estatus</span><span class="detalle-value"><span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span></span></div>
-            <div class="detalle-row"><span class="detalle-label">Monto</span><span class="detalle-value" style="font-weight:700;color:var(--success);">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</span></div>
-            <div class="detalle-row"><span class="detalle-label">Folio</span><span class="detalle-value">${s.folio || '-'}</span></div>
-          </div>
-          <div class="modal-detalle-section">
-            <h3>💳 Datos Fiscales</h3>
-            <div class="detalle-row"><span class="detalle-label">RFC</span><span class="detalle-value">${s.rfc}</span></div>
-            <div class="detalle-row"><span class="detalle-label">Razón Social</span><span class="detalle-value">${s.razon}</span></div>
-            <div class="detalle-row"><span class="detalle-label">Régimen</span><span class="detalle-value">${s.regimen || '-'}</span></div>
-            <div class="detalle-row"><span class="detalle-label">C.P.</span><span class="detalle-value">${s.cp || '-'}</span></div>
-            <div class="detalle-row"><span class="detalle-label">Uso CFDI</span><span class="detalle-value">${s.uso_cfdi || '-'}</span></div>
-            <div class="detalle-row"><span class="detalle-label">Email</span><span class="detalle-value">${s.email}</span></div>
-          </div>
-        </div>
-        ${s.notas ? `<div class="modal-detalle-section"><h3>📝 Notas</h3><p>${s.notas}</p></div>` : ''}
-        <div class="modal-detalle-grid">
-          <div class="modal-detalle-section">
-            <h3>📷 Ticket</h3>
-            ${ticketHtml}
-          </div>
-          <div class="modal-detalle-section">
-            <h3>📄 CSF</h3>
-            ${csfHtml}
-          </div>
-        </div>
-      `;
-      
-      document.getElementById('modalDetalleCliente').classList.remove('hidden');
-    } else {
-      toast('No se pudo cargar el detalle', 'error');
-    }
-  } catch (e) {
-    hideLoading();
-    toast('Error de conexión', 'error');
-  }
-}
-
-function verImagen(src) {
-  mostrarImagenBase64(src);
 }
 
 function aplicarFiltros() {
@@ -1399,46 +1382,6 @@ async function cambiarEstatus(id, estatus) {
     hideLoading();
     toast('Error de conexión', 'error');
   }
-}
-
-function verDetalle(id) {
-  const s = solicitudesData.find(x => x.id === id);
-  if (!s) return;
-  
-  document.getElementById('detalleInfo').innerHTML = `
-    <div class="detalle-row"><span class="detalle-label">Razón Social</span><span class="detalle-value">${s.razon}</span></div>
-    <div class="detalle-row"><span class="detalle-label">RFC</span><span class="detalle-value">${s.rfc}</span></div>
-    <div class="detalle-row"><span class="detalle-label">Régimen</span><span class="detalle-value">${s.regimen || '-'}</span></div>
-    <div class="detalle-row"><span class="detalle-label">C.P.</span><span class="detalle-value">${s.cp || '-'}</span></div>
-    <div class="detalle-row"><span class="detalle-label">Uso CFDI</span><span class="detalle-value">${s.uso_cfdi || '-'}</span></div>
-    <div class="detalle-row"><span class="detalle-label">Email</span><span class="detalle-value">${s.email}</span></div>
-    <div class="detalle-row"><span class="detalle-label">Monto</span><span class="detalle-value" style="font-weight:700;color:var(--success);">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</span></div>
-    <div class="detalle-row"><span class="detalle-label">Folio</span><span class="detalle-value">${s.folio || '-'}</span></div>
-    <div class="detalle-row"><span class="detalle-label">Notas</span><span class="detalle-value">${s.notas || '-'}</span></div>
-  `;
-  
-  const ticketContainer = document.getElementById('detalleTicket');
-  if (s.ticket && s.ticket.length > 100) {
-    const ticketSrc = s.ticket.startsWith('data:') ? s.ticket : 'data:image/jpeg;base64,' + s.ticket;
-    ticketContainer.innerHTML = `<img src="${ticketSrc}" style="max-width:100%; cursor:pointer; border-radius:8px;" onclick="verTicketSolicitud('${s.id}')">`;
-  } else {
-    ticketContainer.innerHTML = '<p style="color:var(--gray-400);">Sin ticket</p>';
-  }
-  
-  const csfContainer = document.getElementById('detalleCSF');
-  if (s.csf && s.csf.length > 100) {
-    const csfSrc = s.csf.startsWith('data:') ? s.csf : 'data:image/jpeg;base64,' + s.csf;
-    csfContainer.innerHTML = `<img src="${csfSrc}" style="max-width:200px; cursor:pointer; border-radius:8px;" onclick="verCsfSolicitud('${s.id}')">`;
-  } else {
-    csfContainer.innerHTML = '<p style="color:var(--gray-400);">Sin CSF</p>';
-  }
-  
-  document.getElementById('detalleAcciones').innerHTML = s.estatus === 'Pendiente' && sesion.permisos !== 'lectura' ? `
-    <button class="btn btn-success" onclick="cambiarEstatus('${s.id}', 'Facturado'); cerrarModalDetalle();">✅ Facturado</button>
-    <button class="btn btn-danger" onclick="cambiarEstatus('${s.id}', 'Rechazado'); cerrarModalDetalle();">❌ Rechazar</button>
-  ` : `<span class="badge badge-${getBadgeClass(s.estatus)}" style="font-size:14px;padding:10px 20px;">${s.estatus}</span>`;
-  
-  document.getElementById('modalDetalle').classList.remove('hidden');
 }
 
 function cerrarModalDetalle() {
@@ -1622,10 +1565,6 @@ function compartirQR() {
 // ============================================
 // MODALES DE IMAGEN
 // ============================================
-function verImagen(src) {
-  mostrarImagenBase64(src);
-}
-
 function cerrarModalImagen() {
   document.getElementById('modalImagen').classList.add('hidden');
 }
