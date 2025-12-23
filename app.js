@@ -672,6 +672,8 @@ function cargarSelectorRazones() {
   }
 }
 
+// En app.js - Modificar función cargarDatosRazon
+
 function cargarDatosRazon(razonId) {
   razonSeleccionadaId = razonId || null;
   
@@ -696,11 +698,16 @@ function cargarDatosRazon(razonId) {
     document.getElementById('solUsoCfdi').value = razon.uso_cfdi || '';
     document.getElementById('solEmail').value = sesion?.usuario?.email || '';
     
+    // MODIFICACIÓN: Cargar CSF automáticamente
     if (razon.csf) {
-      document.getElementById('csfFromRazon').classList.remove('hidden');
       csfBase64 = razon.csf;
+      document.getElementById('csfFromRazon').classList.remove('hidden');
+      // Ocultar el botón de subir CSF
+      document.getElementById('csfUploadText').innerHTML = '<small>✅ CSF de razón social cargada</small>';
+      document.getElementById('csfPreview').classList.add('hidden');
     } else {
       document.getElementById('csfFromRazon').classList.add('hidden');
+      csfBase64 = '';
     }
   }
 }
