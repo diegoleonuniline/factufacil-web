@@ -1268,62 +1268,65 @@ textarea.input {
 /* ============================================
    MODALS
    ============================================ */
+/* Agregar al styles.css */
+
+/* Modal de imagen mejorado */
 .modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.9);
+  z-index: 99999 !important; /* Aumentar z-index */
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-  backdrop-filter: blur(4px);
 }
 
 .modal-content {
   position: relative;
-  max-width: 90%;
-  max-height: 90%;
-  background: #fff;
-  border-radius: var(--radius-lg);
+  max-width: 90vw;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px;
   padding: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
 }
 
 .modal-content img {
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 80vh;
   object-fit: contain;
-  border-radius: var(--radius);
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
 }
 
+/* Botón cerrar mejorado */
 .modal-close {
-  position: absolute;
-  top: -15px;
-  right: -15px;
-  width: 44px;
-  height: 44px;
-  background: #fff;
-  color: var(--gray-800);
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background: white;
   border: none;
   border-radius: 50%;
-  font-size: 20px;
+  font-size: 24px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
-  box-shadow: var(--shadow-lg);
-  transition: var(--transition);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 100000;
+  transition: all 0.2s ease;
 }
 
 .modal-close:hover {
-  background: var(--gray-100);
+  background: #f1f5f9;
   transform: scale(1.1);
 }
 
+.modal-close:active {
+  transform: scale(0.95);
+}
 .modal-detalle-content,
 .modal-form-content {
   position: relative;
