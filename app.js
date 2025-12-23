@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await cargarCatalogos();
   verificarSesion();
   setupEventListeners();
+  setupModalListeners();
   
-  // Verificar parámetro empresa en URL
   const params = new URLSearchParams(window.location.search);
   const empresaParam = params.get('empresa');
   if (empresaParam) {
@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 // EVENT LISTENERS
 // ============================================
 function setupEventListeners() {
-  // Navegación sidebar cliente
   document.querySelectorAll('#sidebarNav .nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       const view = btn.dataset.view;
@@ -51,7 +50,6 @@ function setupEventListeners() {
     });
   });
   
-  // Navegación sidebar empresa
   document.querySelectorAll('#sidebarNavEmpresa .nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       const view = btn.dataset.view;
@@ -68,7 +66,6 @@ function setupEventListeners() {
     });
   });
   
-  // Cerrar modales con Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       cerrarModalImagen();
@@ -78,6 +75,48 @@ function setupEventListeners() {
       cerrarModalDetalleCliente();
     }
   });
+}
+
+function setupModalListeners() {
+  const modalImagen = document.getElementById('modalImagen');
+  if (modalImagen) {
+    modalImagen.addEventListener('click', (e) => {
+      if (e.target === modalImagen) cerrarModalImagen();
+    });
+  }
+  
+  const modalDetalle = document.getElementById('modalDetalle');
+  if (modalDetalle) {
+    modalDetalle.addEventListener('click', (e) => {
+      if (e.target === modalDetalle) cerrarModalDetalle();
+    });
+  }
+  
+  const modalUsuario = document.getElementById('modalUsuario');
+  if (modalUsuario) {
+    modalUsuario.addEventListener('click', (e) => {
+      if (e.target === modalUsuario) cerrarModalUsuario();
+    });
+  }
+  
+  const modalRazon = document.getElementById('modalRazon');
+  if (modalRazon) {
+    modalRazon.addEventListener('click', (e) => {
+      if (e.target === modalRazon) cerrarModalRazon();
+    });
+  }
+  
+  const modalDetalleCliente = document.getElementById('modalDetalleCliente');
+  if (modalDetalleCliente) {
+    modalDetalleCliente.addEventListener('click', (e) => {
+      if (e.target === modalDetalleCliente) cerrarModalDetalleCliente();
+    });
+  }
+  
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', cerrarMenuMobile);
+  }
 }
 
 // ============================================
@@ -348,7 +387,6 @@ async function registrar() {
       selectTipoLogin('cliente');
       document.getElementById('loginUser').value = datos.email;
       
-      // Limpiar formulario
       document.getElementById('regNombre').value = '';
       document.getElementById('regEmail').value = '';
       document.getElementById('regPass').value = '';
@@ -384,7 +422,6 @@ function mostrarPanelInvitado() {
   document.getElementById('sidebarUserType').textContent = 'Sin cuenta';
   document.getElementById('sidebarAvatar').textContent = '👤';
   
-  // Ocultar opciones que requieren cuenta
   document.querySelectorAll('#sidebarNav .nav-item').forEach(n => {
     const view = n.dataset.view;
     if (view === 'dashboard' || view === 'historial' || view === 'perfil') {
@@ -403,10 +440,8 @@ function mostrarPanelInvitado() {
     }
   });
   
-  // Ocultar selector de razón social
   document.getElementById('selectorRazon')?.classList.add('hidden');
   
-  // Preseleccionar empresa si viene de QR
   setTimeout(() => {
     const empresaPre = sessionStorage.getItem('empresaPreseleccionada');
     if (empresaPre) {
@@ -418,7 +453,6 @@ function mostrarPanelInvitado() {
     }
   }, 300);
   
-  // Ir a solicitar
   navegarA('solicitar');
 }
 
@@ -439,11 +473,9 @@ function mostrarPanelCliente() {
   document.getElementById('sidebarAvatar').textContent = (u.nombre || 'C')[0].toUpperCase();
   document.getElementById('dashboardNombre').textContent = u.nombre || 'Usuario';
   
-  // Mostrar todas las opciones
   document.querySelectorAll('#sidebarNav .nav-item').forEach(n => n.style.display = 'flex');
   document.querySelectorAll('#bottomNav .bottom-nav-item').forEach(n => n.style.display = 'flex');
   
-  // Cargar perfil
   document.getElementById('perfilNombre').value = u.nombre || '';
   document.getElementById('perfilEmail').value = u.email || '';
   
@@ -452,12 +484,10 @@ function mostrarPanelCliente() {
     perfilCsfBase64 = u.csf;
   }
   
-  // Mostrar selector de razón social
   document.getElementById('selectorRazon')?.classList.remove('hidden');
   cargarSelectorRazones();
   cargarListaRazones();
   
-  // Preseleccionar empresa si viene de QR
   setTimeout(() => {
     const empresaPre = sessionStorage.getItem('empresaPreseleccionada');
     if (empresaPre) {
@@ -471,7 +501,6 @@ function mostrarPanelCliente() {
     }
   }, 300);
   
-  // Cargar dashboard
   cargarDashboard();
   navegarA('dashboard');
 }
@@ -498,7 +527,6 @@ function mostrarPanelEmpresa() {
     document.querySelector('[data-view="usuarios-empresa"]')?.classList.add('hidden');
   }
 
-  // Iniciar polling de notificaciones
   solicitarPermisoNotificaciones();
   iniciarPolling();
   cargarSolicitudesEmpresa();
@@ -509,21 +537,17 @@ function mostrarPanelEmpresa() {
 // NAVEGACIÓN CLIENTE
 // ============================================
 function navegarA(view) {
-  // Actualizar sidebar
   document.querySelectorAll('#sidebarNav .nav-item').forEach(n => {
     n.classList.toggle('active', n.dataset.view === view);
   });
   
-  // Actualizar bottom nav
   document.querySelectorAll('#bottomNav .bottom-nav-item').forEach(n => {
     n.classList.toggle('active', n.dataset.view === view);
   });
   
-  // Mostrar vista
   document.querySelectorAll('#panelCliente .content-view').forEach(v => v.classList.remove('active'));
   document.getElementById(`view-${view}`)?.classList.add('active');
   
-  // Cargar datos según vista
   if (view === 'dashboard') cargarDashboard();
   if (view === 'historial') cargarHistorial();
 }
@@ -605,7 +629,6 @@ function cargarSelectorRazones() {
     select.innerHTML += `<option value="${r.id}">${r.rfc} - ${r.razon}${pred}</option>`;
   });
   
-  // Seleccionar la predeterminada
   const predeterminada = razonesSociales.find(r => r.predeterminada);
   if (predeterminada) {
     select.value = predeterminada.id;
@@ -617,7 +640,6 @@ function cargarDatosRazon(razonId) {
   razonSeleccionadaId = razonId || null;
   
   if (!razonId) {
-    // Limpiar campos para nueva razón
     document.getElementById('solRfc').value = '';
     document.getElementById('solRazon').value = '';
     document.getElementById('solRegimen').value = '';
@@ -638,7 +660,6 @@ function cargarDatosRazon(razonId) {
     document.getElementById('solUsoCfdi').value = razon.uso_cfdi || '';
     document.getElementById('solEmail').value = sesion?.usuario?.email || '';
     
-    // Si la razón tiene CSF, mostrar indicador
     if (razon.csf) {
       document.getElementById('csfFromRazon').classList.remove('hidden');
       csfBase64 = razon.csf;
@@ -806,7 +827,6 @@ async function recargarRazones() {
 // BUSCAR RFC
 // ============================================
 function buscarDatosPorRFC(rfc) {
-  // Si el usuario tiene sesión y razones, no buscar automáticamente
   if (sesion?.tipo === 'cliente' && razonesSociales.length > 0) return;
   
   clearTimeout(rfcTimeout);
@@ -1209,7 +1229,6 @@ function verCsfSolicitud(id) {
 function mostrarImagenBase64(src) {
   if (!src) return;
   
-  // Asegurar prefijo correcto
   if (!src.startsWith('data:')) {
     src = 'data:image/jpeg;base64,' + src;
   }
@@ -1225,7 +1244,6 @@ function verImagenSolicitud(id, tipo) {
   let src = tipo === 'ticket' ? s.ticket : s.csf;
   if (!src) return;
   
-  // Asegurar que tenga el prefijo correcto
   if (!src.startsWith('data:')) {
     src = `data:image/jpeg;base64,${src}`;
   }
@@ -1289,7 +1307,6 @@ function verDetalle(id) {
     <div class="detalle-row"><span class="detalle-label">Notas</span><span class="detalle-value">${s.notas || '-'}</span></div>
   `;
   
-  // Ticket
   const ticketContainer = document.getElementById('detalleTicket');
   if (s.ticket && s.ticket.length > 100) {
     const ticketSrc = s.ticket.startsWith('data:') ? s.ticket : 'data:image/jpeg;base64,' + s.ticket;
@@ -1298,7 +1315,6 @@ function verDetalle(id) {
     ticketContainer.innerHTML = '<p style="color:var(--gray-400);">Sin ticket</p>';
   }
   
-  // CSF
   const csfContainer = document.getElementById('detalleCSF');
   if (s.csf && s.csf.length > 100) {
     const csfSrc = s.csf.startsWith('data:') ? s.csf : 'data:image/jpeg;base64,' + s.csf;
@@ -1314,8 +1330,6 @@ function verDetalle(id) {
   
   document.getElementById('modalDetalle').classList.remove('hidden');
 }
-
-
 
 function cerrarModalDetalle() {
   document.getElementById('modalDetalle').classList.add('hidden');
@@ -1502,10 +1516,7 @@ function verImagen(src) {
   mostrarImagenBase64(src);
 }
 
-function cerrarModalImagen(event) {
-  if (event && event.target.id !== 'modalImagen' && !event.target.classList.contains('modal-close')) {
-    return;
-  }
+function cerrarModalImagen() {
   document.getElementById('modalImagen').classList.add('hidden');
 }
 
@@ -1540,9 +1551,9 @@ function getBadgeClass(estatus) {
     case 'Facturado': return 'done';
     case 'Rechazado': return 'rejected';
     default: return 'inactive';
-  } 
-  
+  }
 }
+
 // ============================================
 // NOTIFICACIONES Y POLLING
 // ============================================
@@ -1552,10 +1563,8 @@ let pollingInterval = null;
 function iniciarPolling() {
   if (sesion?.tipo !== 'empresa') return;
   
-  // Cargar conteo inicial
   cargarConteoSolicitudes(true);
   
-  // Polling cada 30 segundos
   pollingInterval = setInterval(() => {
     cargarConteoSolicitudes(false);
   }, 30000);
@@ -1568,10 +1577,9 @@ async function cargarConteoSolicitudes(inicial) {
     const pendientes = solicitudes.filter(s => s.estatus === 'Pendiente').length;
     
     if (!inicial && pendientes > ultimoConteoSolicitudes) {
-      // Nueva solicitud detectada
       reproducirSonido();
       mostrarNotificacion(pendientes - ultimoConteoSolicitudes);
-      cargarSolicitudesEmpresa(); // Recargar tabla
+      cargarSolicitudesEmpresa();
     }
     
     ultimoConteoSolicitudes = pendientes;
@@ -1589,10 +1597,8 @@ function reproducirSonido() {
 }
 
 function mostrarNotificacion(cantidad) {
-  // Notificación visual en pantalla
   toast(`🔔 ¡${cantidad} nueva(s) solicitud(es)!`, 'success');
   
-  // Notificación del navegador (si tiene permiso)
   if (Notification.permission === 'granted') {
     new Notification('FacturaFácil', {
       body: `Tienes ${cantidad} nueva(s) solicitud(es) pendiente(s)`,
@@ -1607,8 +1613,6 @@ function solicitarPermisoNotificaciones() {
   }
 }
 
-// Detener polling al salir
 window.addEventListener('beforeunload', () => {
   if (pollingInterval) clearInterval(pollingInterval);
 });
-
