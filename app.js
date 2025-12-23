@@ -496,7 +496,10 @@ function mostrarPanelEmpresa() {
   if (!sesion.admin) {
     document.querySelector('[data-view="usuarios-empresa"]')?.classList.add('hidden');
   }
-  
+
+  // Iniciar polling de notificaciones
+  solicitarPermisoNotificaciones();
+  iniciarPolling();
   cargarSolicitudesEmpresa();
   generarQREmpresa();
 }
@@ -1166,23 +1169,29 @@ function renderSolicitudesEmpresa(data) {
     return;
   }
   
-  tbody.innerHTML = data.map(s => `
+  tbody.innerHTML = data.map(s => {
+    // Fix para imágenes base64
+    const ticketSrc = s.ticket ? (s.ticket.startsWith('data:') ? s.ticket : `data:image/jpeg;base64,${s.ticket}`) : '';
+    const csfSrc = s.csf ? (s.csf.startsWith('data:') ? s.csf : `data:image/jpeg;base64,${s.csf}`) : '';
+    
+    return `
     <tr>
       <td>${formatFecha(s.fecha)}</td>
-      <td class="tabla-cliente" onclick="verDetalle('${s.id}')">${s.razon}</td>
+      <td>${s.razon}</td>
       <td>${s.rfc}</td>
       <td class="tabla-monto">${s.monto ? '$' + parseFloat(s.monto).toLocaleString() : '-'}</td>
-      <td>${s.ticket ? `<img src="${s.ticket}" class="tabla-miniatura" onclick="event.stopPropagation(); verImagen('${s.ticket}')">` : '<span class="tabla-no-file">-</span>'}</td>
-      <td>${s.csf ? `<button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); verImagen('${s.csf}')">Ver</button>` : '<span class="tabla-no-file">-</span>'}</td>
+      <td>${ticketSrc ? `<img src="${ticketSrc}" class="tabla-miniatura" onclick="event.stopPropagation(); verImagen('${ticketSrc.replace(/'/g, "\\'")}')">` : '<span class="tabla-no-file">-</span>'}</td>
+      <td>${csfSrc ? `<button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); verImagen('${csfSrc.replace(/'/g, "\\'")}')">📄</button>` : '<span class="tabla-no-file">-</span>'}</td>
       <td><span class="badge badge-${getBadgeClass(s.estatus)}">${s.estatus}</span></td>
       <td class="tabla-acciones">
+        <button class="btn btn-sm btn-primary" onclick="verDetalle('${s.id}')">👁️</button>
         ${s.estatus === 'Pendiente' && sesion.permisos !== 'lectura' ? `
           <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); cambiarEstatus('${s.id}', 'Facturado')">✓</button>
           <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); cambiarEstatus('${s.id}', 'Rechazado')">✗</button>
         ` : ''}
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 }
 
 function aplicarFiltros() {
@@ -1228,6 +1237,10 @@ function verDetalle(id) {
   const s = solicitudesData.find(x => x.id === id);
   if (!s) return;
   
+  // Fix para imágenes base64
+  const ticketSrc = s.ticket ? (s.ticket.startsWith('data:') ? s.ticket : `data:image/jpeg;base64,${s.ticket}`) : '';
+  const csfSrc = s.csf ? (s.csf.startsWith('data:') ? s.csf : `data:image/jpeg;base64,${s.csf}`) : '';
+  
   document.getElementById('detalleInfo').innerHTML = `
     <div class="detalle-row"><span class="detalle-label">Razón Social</span><span class="detalle-value">${s.razon}</span></div>
     <div class="detalle-row"><span class="detalle-label">RFC</span><span class="detalle-value">${s.rfc}</span></div>
@@ -1240,12 +1253,12 @@ function verDetalle(id) {
     <div class="detalle-row"><span class="detalle-label">Notas</span><span class="detalle-value">${s.notas || '-'}</span></div>
   `;
   
-  document.getElementById('detalleTicket').innerHTML = s.ticket 
-    ? `<img src="${s.ticket}" onclick="verImagen('${s.ticket}')" style="max-width:100%; cursor:pointer; border-radius:8px;">`
+  document.getElementById('detalleTicket').innerHTML = ticketSrc 
+    ? `<img src="${ticketSrc}" onclick="verImagen('${ticketSrc.replace(/'/g, "\\'")}')" style="max-width:100%; cursor:pointer; border-radius:8px;">`
     : '<p style="color:var(--gray-400);">Sin ticket</p>';
   
-  document.getElementById('detalleCSF').innerHTML = s.csf
-    ? `<button class="btn btn-primary" onclick="verImagen('${s.csf}')">Ver CSF</button>`
+  document.getElementById('detalleCSF').innerHTML = csfSrc
+    ? `<img src="${csfSrc}" onclick="verImagen('${csfSrc.replace(/'/g, "\\'")}')" style="max-width:200px; cursor:pointer; border-radius:8px;">`
     : '<p style="color:var(--gray-400);">Sin CSF</p>';
   
   document.getElementById('detalleAcciones').innerHTML = s.estatus === 'Pendiente' && sesion.permisos !== 'lectura' ? `
@@ -1480,5 +1493,75 @@ function getBadgeClass(estatus) {
     case 'Facturado': return 'done';
     case 'Rechazado': return 'rejected';
     default: return 'inactive';
+  } 
+  
+}
+// ============================================
+// NOTIFICACIONES Y POLLING
+// ============================================
+let ultimoConteoSolicitudes = 0;
+let pollingInterval = null;
+
+function iniciarPolling() {
+  if (sesion?.tipo !== 'empresa') return;
+  
+  // Cargar conteo inicial
+  cargarConteoSolicitudes(true);
+  
+  // Polling cada 30 segundos
+  pollingInterval = setInterval(() => {
+    cargarConteoSolicitudes(false);
+  }, 30000);
+}
+
+async function cargarConteoSolicitudes(inicial) {
+  try {
+    const data = await apiGet(`/api/solicitudes/empresa/${sesion.empresaId}`);
+    const solicitudes = Array.isArray(data) ? data : [];
+    const pendientes = solicitudes.filter(s => s.estatus === 'Pendiente').length;
+    
+    if (!inicial && pendientes > ultimoConteoSolicitudes) {
+      // Nueva solicitud detectada
+      reproducirSonido();
+      mostrarNotificacion(pendientes - ultimoConteoSolicitudes);
+      cargarSolicitudesEmpresa(); // Recargar tabla
+    }
+    
+    ultimoConteoSolicitudes = pendientes;
+  } catch (e) {
+    console.error('Error en polling:', e);
   }
 }
+
+function reproducirSonido() {
+  try {
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkpWQgHBkYXN/jJOWko6AdGdhcYCMlJaUjoF1aGVygY6WlpaQgXVoZXKBjpaWlpCBdWhkcYGOlpaWkIF1aGVygY6WlpaQgXVoZXKBjpaWlpCBdWhkcoGOlpaWkIF1');
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  } catch (e) {}
+}
+
+function mostrarNotificacion(cantidad) {
+  // Notificación visual en pantalla
+  toast(`🔔 ¡${cantidad} nueva(s) solicitud(es)!`, 'success');
+  
+  // Notificación del navegador (si tiene permiso)
+  if (Notification.permission === 'granted') {
+    new Notification('FacturaFácil', {
+      body: `Tienes ${cantidad} nueva(s) solicitud(es) pendiente(s)`,
+      icon: '🧾'
+    });
+  }
+}
+
+function solicitarPermisoNotificaciones() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+// Detener polling al salir
+window.addEventListener('beforeunload', () => {
+  if (pollingInterval) clearInterval(pollingInterval);
+});
+
