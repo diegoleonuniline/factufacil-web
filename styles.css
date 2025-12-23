@@ -396,7 +396,16 @@ select.input {
   background-position: right 12px center;
   background-size: 20px;
   padding-right: 44px;
-  appearance: none;
+}
+
+/* En mobile usar selector nativo del sistema */
+@media (max-width: 768px) {
+  select.input {
+    appearance: auto;
+    -webkit-appearance: menulist;
+    background-image: none;
+    padding-right: 14px;
+  }
 }
 
 textarea.input {
